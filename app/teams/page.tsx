@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import Link from 'next/link';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
 
 interface Team {
   id: number;
   name: string;
-  shortName: string;
-  tla: string;
-  crest: string | null;
+  code: string | null;
+  country: string | null;
+  logo: string | null;
+  venueName: string | null;
   _count: { homeMatches: number; awayMatches: number };
 }
 
@@ -28,7 +29,7 @@ export default function TeamsPage() {
 
   const filtered = teams.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.tla.toLowerCase().includes(search.toLowerCase())
+    (t.code ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return <LoadingSpinner message="Loading teams..." />;
@@ -50,29 +51,29 @@ export default function TeamsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="No teams found" description="Try adjusting your search." />
+        <EmptyState title="No teams found" description={teams.length === 0 ? 'Sync data in Admin → Sync to load teams.' : 'Try adjusting your search.'} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((team) => (
-            <div key={team.id} className="bg-[#111827] border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition-colors">
+            <Link key={team.id} href={`/teams/${team.id}`} className="bg-[#111827] border border-gray-800 rounded-xl p-5 hover:border-[#00d4aa]/40 hover:bg-[#00d4aa]/5 transition-colors block">
               <div className="flex items-center gap-3 mb-3">
-                {team.crest ? (
-                  <Image src={team.crest} alt={team.name} width={36} height={36} className="object-contain" />
+                {team.logo ? (
+                  <img src={team.logo} alt={team.name} width={36} height={36} className="object-contain" />
                 ) : (
                   <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center text-xs font-bold text-slate-300">
-                    {team.tla}
+                    {team.code ?? team.name.slice(0, 3).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <p className="text-white font-bold text-sm leading-tight">{team.name}</p>
-                  <p className="text-slate-500 text-xs">{team.tla}</p>
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm leading-tight truncate">{team.name}</p>
+                  <p className="text-slate-500 text-xs truncate">{team.code ?? team.country ?? '—'}</p>
                 </div>
               </div>
               <div className="flex gap-4 text-xs text-slate-400">
                 <span>Home: <span className="text-slate-200">{team._count.homeMatches}</span></span>
                 <span>Away: <span className="text-slate-200">{team._count.awayMatches}</span></span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

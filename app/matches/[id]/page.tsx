@@ -3,204 +3,143 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import ProbabilityBar from '@/components/ProbabilityBar';
 
-interface SbMatchDetail {
-  id: number; statsbombId: number;
+interface Team { id: number; name: string; code: string | null; logo: string | null }
+interface League { id: number; name: string; country?: { name: string } | null }
+interface Season { year: string }
+interface Prediction {
+  id: number; homeWinProbability: number; drawProbability: number; awayWinProbability: number;
+  predictedHomeGoals: number; predictedAwayGoals: number; confidence: number; explanation: string | null;
+}
+interface MatchDetail {
+  id: number; utcDate: string; statusShort: string; statusLong: string | null;
   homeScore: number | null; awayScore: number | null;
-  matchDate: string; kickOff: string | null;
-  matchWeek: number | null; stage: string | null;
-  stadium: string | null; referee: string | null;
-  homeTeam: { id: number; name: string };
-  awayTeam: { id: number; name: string };
-  competition: { competitionName: string; seasonName: string };
+  halftimeHomeScore: number | null; halftimeAwayScore: number | null;
+  fulltimeHomeScore: number | null; fulltimeAwayScore: number | null;
+  venueName: string | null; venueCity: string | null; referee: string | null;
+  winner: string | null;
+  homeTeam: Team; awayTeam: Team; league: League; season: Season | null;
+  predictions: Prediction[];
 }
 
-interface LineupTeam {
-  team: { id: number; name: string };
-  players: Array<{
-    id: number; name: string; nickname: string | null;
-    jerseyNumber: number | null; country: string | null;
-    positions: Array<{ position: string; start_reason: string; end_reason: string | null }>;
-    cards: Array<{ card_type: string; reason: string }>;
-  }>;
-}
+const FINISHED = ['FT', 'AET', 'PEN', 'FINISHED'];
 
-interface MatchEvent {
-  id: string; period: number; minute: number; second: number;
-  type: string; player: string | null; team: string | null;
-  extras: {
-    shot?: { xg?: number; outcome?: string; bodyPart?: string };
-    substitution?: { replacement?: string; outcome?: string };
-    card?: string;
-    foul?: { card?: string; type?: string };
-    pass?: { goalAssist?: boolean; recipient?: string };
-  } | null;
-}
-
-function eventIcon(type: string): string {
-  if (type === 'Shot') return '⚽';
-  if (type === 'Substitution') return '🔄';
-  if (type === 'Foul Committed') return '⚠️';
-  if (type === 'Bad Behaviour') return '🟨';
-  if (type === 'Own Goal For' || type === 'Own Goal Against') return '😬';
-  if (type === 'Pass') return '🎯';
-  return '•';
-}
-
-function eventDesc(ev: MatchEvent): string {
-  if (ev.type === 'Shot') {
-    const outcome = ev.extras?.shot?.outcome ?? '';
-    const xg = ev.extras?.shot?.xg != null ? ` (xG ${ev.extras.shot.xg.toFixed(2)})` : '';
-    return `${outcome}${xg}`;
-  }
-  if (ev.type === 'Substitution') return `→ ${ev.extras?.substitution?.replacement ?? ''}`;
-  if (ev.type === 'Bad Behaviour') return ev.extras?.card ?? '';
-  if (ev.type === 'Foul Committed') return ev.extras?.foul?.card ? `+ ${ev.extras.foul.card}` : '';
-  if (ev.type === 'Pass') return 'Goal assist';
-  return '';
+function Row({ label, value }: { label: string; value: string | number | null }) {
+  if (value == null || value === '') return null;
+  return (
+    <div className="flex justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="text-slate-200">{value}</span>
+    </div>
+  );
 }
 
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
-  const [match, setMatch] = useState<SbMatchDetail | null>(null);
-  const [lineups, setLineups] = useState<LineupTeam[]>([]);
-  const [events, setEvents] = useState<MatchEvent[]>([]);
+  const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'events' | 'lineups'>('events');
 
   useEffect(() => {
-    const id = params.id;
-    Promise.all([
-      fetch(`/api/sb/matches/${id}`).then(r => r.json()),
-      fetch(`/api/matches/${id}/lineups`).then(r => r.json()),
-      fetch(`/api/matches/${id}/events`).then(r => r.json()),
-    ]).then(([m, l, e]: [SbMatchDetail & { error?: string }, LineupTeam[], MatchEvent[]]) => {
-      if (!m.error) setMatch(m);
-      setLineups(Array.isArray(l) ? l : []);
-      setEvents(Array.isArray(e) ? e : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetch(`/api/matches/${params.id}`)
+      .then(r => r.json())
+      .then((d: { match?: MatchDetail; error?: string }) => {
+        if (!d.error && d.match) setMatch(d.match);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [params.id]);
 
   if (loading) return <LoadingSpinner message="Loading match..." />;
   if (!match) return <div className="text-center py-20 text-red-400">Match not found.</div>;
 
-  const goals = events.filter(e => e.type === 'Shot' && e.extras?.shot?.outcome === 'Goal');
+  const isFinished = FINISHED.includes(match.statusShort);
+  const prediction = match.predictions[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <Link href="/matches" className="text-sm text-slate-500 hover:text-[#00d4aa] mb-2 inline-block">
-          ← Matches
+        <Link href="/results" className="text-sm text-slate-500 hover:text-[#00d4aa] mb-2 inline-block">
+          ← Back
         </Link>
 
         <div className="bg-[#111827] border border-gray-800 rounded-xl p-6">
           <p className="text-slate-400 text-sm text-center mb-4">
-            {match.competition.competitionName} · {match.competition.seasonName}
-            {match.stage ? ` · ${match.stage}` : ''}
-            {match.matchWeek ? ` · MD ${match.matchWeek}` : ''}
+            {match.league.country?.name ? `${match.league.country.name} · ` : ''}{match.league.name}
+            {match.season?.year ? ` · ${match.season.year}` : ''}
           </p>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 text-right">
-              <p className="text-2xl font-black text-white">{match.homeTeam.name}</p>
+          <div className="grid grid-cols-3 items-center gap-4">
+            <div className="text-center">
+              {match.homeTeam.logo && <img src={match.homeTeam.logo} alt="" className="w-16 h-16 object-contain mx-auto mb-2" />}
+              <p className="text-xl font-black text-white">{match.homeTeam.name}</p>
+              <p className="text-slate-500 text-xs">Home</p>
             </div>
-            <div className="text-center px-6 shrink-0">
-              <p className="text-5xl font-black text-[#00d4aa]">
-                {match.homeScore ?? '–'} – {match.awayScore ?? '–'}
-              </p>
-              <p className="text-slate-500 text-xs mt-2">{format(new Date(match.matchDate), 'dd MMM yyyy')}</p>
-              {match.stadium && <p className="text-slate-500 text-xs">{match.stadium}</p>}
-              {match.referee && <p className="text-slate-600 text-xs">Ref: {match.referee}</p>}
+            <div className="text-center px-4">
+              {isFinished ? (
+                <p className="text-5xl font-black text-[#00d4aa]">{match.homeScore ?? '–'} – {match.awayScore ?? '–'}</p>
+              ) : (
+                <p className="text-3xl font-bold text-slate-300">vs</p>
+              )}
+              <p className="text-slate-500 text-xs mt-2">{format(new Date(match.utcDate), 'dd MMM yyyy, HH:mm')}</p>
+              <p className="text-slate-600 text-xs">{match.statusLong ?? match.statusShort}</p>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-2xl font-black text-white">{match.awayTeam.name}</p>
+            <div className="text-center">
+              {match.awayTeam.logo && <img src={match.awayTeam.logo} alt="" className="w-16 h-16 object-contain mx-auto mb-2" />}
+              <p className="text-xl font-black text-white">{match.awayTeam.name}</p>
+              <p className="text-slate-500 text-xs">Away</p>
             </div>
           </div>
-          {goals.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-gray-800 flex flex-wrap gap-x-6 gap-y-1 justify-center text-sm text-slate-400">
-              {goals.map(g => (
-                <span key={g.id}>⚽ {g.player} {g.minute}&apos;</span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {(['events', 'lineups'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors capitalize ${
-              tab === t
-                ? 'bg-[#00d4aa] text-[#0a0f1e]'
-                : 'bg-[#111827] border border-gray-700 text-slate-300 hover:border-gray-500'
-            }`}
-          >
-            {t} {t === 'events' ? `(${events.length})` : `(${lineups.reduce((s, l) => s + l.players.length, 0)})`}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'events' && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#111827] border border-gray-800 rounded-xl p-5">
-          {events.length === 0 ? (
-            <p className="text-slate-500 text-sm">No key events recorded for this match.</p>
+          <h2 className="text-white font-bold mb-3">Match Info</h2>
+          <Row label="Status" value={match.statusLong ?? match.statusShort} />
+          <Row label="Date" value={format(new Date(match.utcDate), 'EEEE, dd MMMM yyyy')} />
+          <Row label="Kick-off" value={format(new Date(match.utcDate), 'HH:mm')} />
+          <Row label="Venue" value={match.venueName} />
+          <Row label="City" value={match.venueCity} />
+          <Row label="Referee" value={match.referee} />
+          <Row label="League" value={match.league.name} />
+          <Row label="Season" value={match.season?.year ?? null} />
+        </div>
+
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-5">
+          <h2 className="text-white font-bold mb-3">Score Breakdown</h2>
+          {isFinished ? (
+            <>
+              <Row label="Halftime" value={match.halftimeHomeScore != null ? `${match.halftimeHomeScore} – ${match.halftimeAwayScore}` : null} />
+              <Row label="Full time" value={match.fulltimeHomeScore != null ? `${match.fulltimeHomeScore} – ${match.fulltimeAwayScore}` : `${match.homeScore} – ${match.awayScore}`} />
+              <Row label="Winner" value={
+                match.winner === 'HOME_TEAM' ? match.homeTeam.name :
+                match.winner === 'AWAY_TEAM' ? match.awayTeam.name : 'Draw'
+              } />
+            </>
           ) : (
-            <div className="space-y-0">
-              {events.map(ev => (
-                <div key={ev.id} className="flex items-center gap-3 py-2 border-b border-gray-800/40 last:border-0">
-                  <span className="text-slate-500 text-xs w-10 text-right shrink-0 font-mono">{ev.minute}&apos;</span>
-                  <span className="text-base shrink-0">{eventIcon(ev.type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-slate-200 text-sm font-medium">{ev.player ?? ev.team}</span>
-                    {eventDesc(ev) && (
-                      <span className="text-slate-400 text-xs ml-2">{eventDesc(ev)}</span>
-                    )}
-                  </div>
-                  <span className="text-slate-600 text-xs shrink-0">{ev.team}</span>
-                  <span className="text-slate-700 text-xs shrink-0 w-5 text-center">{ev.period}</span>
-                </div>
-              ))}
-            </div>
+            <p className="text-slate-500 text-sm">Match not finished yet.</p>
           )}
         </div>
-      )}
+      </div>
 
-      {tab === 'lineups' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {lineups.length === 0 ? (
-            <p className="text-slate-500 text-sm col-span-2">No lineup data for this match.</p>
-          ) : lineups.map(lineup => (
-            <div key={lineup.team.id} className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-800">
-                <h3 className="text-white font-bold">{lineup.team.name}</h3>
-                <p className="text-slate-500 text-xs">{lineup.players.length} players</p>
-              </div>
-              <div className="divide-y divide-gray-800/40">
-                {lineup.players.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="text-slate-600 text-xs w-5 text-center font-mono shrink-0">
-                      {p.jerseyNumber ?? ''}
-                    </span>
-                    <Link href={`/players/${p.id}`} className="text-slate-200 text-sm flex-1 hover:text-[#00d4aa] transition-colors">
-                      {p.name}
-                    </Link>
-                    <span className="text-slate-500 text-xs">{p.positions[0]?.position ?? ''}</span>
-                    {p.positions[0]?.start_reason === 'Substitution' && (
-                      <span className="text-blue-400 text-xs">sub</span>
-                    )}
-                    {p.cards.map((c, i) => (
-                      <span
-                        key={i}
-                        className={`w-2.5 h-3.5 rounded-sm ${c.card_type.toLowerCase().includes('yellow') ? 'bg-yellow-400' : 'bg-red-500'}`}
-                        title={`${c.card_type}: ${c.reason}`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+      {prediction && (
+        <div className="bg-[#111827] border border-[#00d4aa]/20 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white font-bold">Prediction</h2>
+            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#00d4aa]/10 text-[#00d4aa]">
+              {Math.round(prediction.confidence * 100)}% confidence
+            </span>
+          </div>
+          <div className="text-center mb-3">
+            <span className="text-3xl font-black text-white">{prediction.predictedHomeGoals} — {prediction.predictedAwayGoals}</span>
+          </div>
+          <ProbabilityBar
+            homeProb={prediction.homeWinProbability}
+            drawProb={prediction.drawProbability}
+            awayProb={prediction.awayWinProbability}
+            homeLabel={match.homeTeam.name}
+            awayLabel={match.awayTeam.name}
+          />
+          {prediction.explanation && <p className="text-slate-400 text-xs mt-3">{prediction.explanation}</p>}
         </div>
       )}
     </div>

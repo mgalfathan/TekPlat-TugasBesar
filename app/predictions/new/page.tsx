@@ -11,7 +11,7 @@ export default function NewPredictionPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [leagueId, setLeagueId] = useState('');
-  const [season, setSeason] = useState('2025');
+  const [season, setSeason] = useState('2024');
   const [homeTeamId, setHomeTeamId] = useState('');
   const [awayTeamId, setAwayTeamId] = useState('');
   const [result, setResult] = useState<Prediction | null>(null);

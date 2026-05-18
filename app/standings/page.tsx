@@ -12,7 +12,7 @@ export default function StandingsPage() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leagueId, setLeagueId] = useState('');
-  const [season, setSeason] = useState('2025');
+  const [season, setSeason] = useState('2024');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

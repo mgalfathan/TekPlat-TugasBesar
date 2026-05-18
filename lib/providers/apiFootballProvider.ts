@@ -1,11 +1,23 @@
 import type { FootballProvider, ProviderCountry, ProviderLeague, ProviderSeason, ProviderTeam, ProviderPlayer, ProviderFixture, ProviderStanding } from './types';
+import { acquireToken, sleep } from './rateLimit';
 
 const BASE = 'https://v3.football.api-sports.io';
 const KEY = process.env.API_FOOTBALL_KEY ?? '';
 
-async function apiFetch(path: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function apiFetch(path: string, attempt = 0): Promise<any[]> {
   if (!KEY) throw new Error('API_FOOTBALL_KEY not set');
+  await acquireToken();
   const res = await fetch(`${BASE}${path}`, { headers: { 'x-apisports-key': KEY }, next: { revalidate: 0 } });
+
+  if (res.status === 429) {
+    if (attempt >= 2) throw new Error(`API-Football ${path} → 429 (rate limit; retries exhausted)`);
+    const retryAfter = Number(res.headers.get('retry-after'));
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 60_000;
+    await sleep(waitMs);
+    return apiFetch(path, attempt + 1);
+  }
+
   if (!res.ok) throw new Error(`API-Football ${path} → ${res.status}`);
   const json = await res.json();
   return json.response ?? [];

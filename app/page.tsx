@@ -33,9 +33,9 @@ export default function HomePage() {
 
       <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-4xl">
         {[
-          { icon: '📊', label: 'Live Stats' },
-          { icon: '🤖', label: 'AI Predictions' },
-          { icon: '🏆', label: 'Leaderboard' },
+          { icon: '📊', label: 'Team Analytics' },
+          { icon: '🤖', label: 'Predictions' },
+          { icon: '🏆', label: 'Standings' },
           { icon: '🧮', label: 'Custom Metrics' },
         ].map((f) => (
           <div key={f.label} className="bg-[#111827] border border-gray-800 rounded-xl p-6 text-center">

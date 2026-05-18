@@ -1,135 +1,112 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-interface Position { position: string; start_reason: string; end_reason: string | null }
-interface Card { card_type: string; reason: string }
-
-interface Appearance {
-  matchId: number; statsbombMatchId: number; matchDate: string;
-  competition: string; season: string;
-  homeTeam: string; awayTeam: string;
-  homeScore: number | null; awayScore: number | null;
-  team: string; jerseyNumber: number | null;
-  positions: Position[];
-  cards: Card[];
+interface Player {
+  id: number;
+  name: string;
+  firstname: string | null;
+  lastname: string | null;
+  age: number | null;
+  birthDate: string | null;
+  nationality: string | null;
+  height: string | null;
+  weight: string | null;
+  photo: string | null;
+  injured: boolean;
+  team: { id: number; name: string; logo: string | null; code: string | null; country: string | null; venueName: string | null } | null;
 }
 
-interface PlayerDetail {
-  player: { id: number; statsbombId: number; name: string; nickname: string | null; country: string | null };
-  stats: { goals: number; assists: number; shots: number; xg: number; appearances: number };
-  appearances: Appearance[];
-}
-
-function StatBubble({ label, value }: { label: string; value: string | number }) {
+function Field({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="bg-[#0a0f1e] rounded-xl p-4 text-center">
-      <p className="text-2xl font-black text-[#00d4aa]">{value}</p>
-      <p className="text-slate-400 text-xs mt-1">{label}</p>
+    <div className="bg-white/5 rounded-lg px-3 py-2">
+      <div className="text-slate-500 text-[10px] uppercase tracking-wide">{label}</div>
+      <div className="text-slate-100 text-sm font-medium">{value ?? '—'}</div>
     </div>
   );
 }
 
 export default function PlayerPage({ params }: { params: { id: string } }) {
-  const [data, setData] = useState<PlayerDetail | null>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`/api/players/${params.id}`)
       .then(r => r.json())
-      .then((d: PlayerDetail & { error?: string }) => {
-        if (!d.error) setData(d);
+      .then((d: { player?: Player; error?: string }) => {
+        if (!d.error && d.player) setPlayer(d.player);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [params.id]);
 
   if (loading) return <LoadingSpinner message="Loading player profile..." />;
-  if (!data) return <div className="text-center py-20 text-red-400">Player not found.</div>;
-
-  const { player, stats, appearances } = data;
+  if (!player) return <div className="text-center py-20 text-red-400">Player not found.</div>;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link href="/players" className="text-sm text-slate-500 hover:text-[#00d4aa] mb-2 inline-block">
-          ← Players
-        </Link>
-        <h1 className="text-3xl font-black text-white">{player.name}</h1>
-        {player.nickname && <p className="text-slate-400 text-sm mt-0.5">&quot;{player.nickname}&quot;</p>}
-        {player.country && <p className="text-slate-500 text-sm mt-0.5">{player.country}</p>}
-      </div>
+    <div className="space-y-6">
+      <Link href="/players" className="text-sm text-slate-500 hover:text-[#00d4aa] inline-block">
+        ← Players
+      </Link>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <StatBubble label="Appearances" value={stats.appearances} />
-        <StatBubble label="Goals" value={stats.goals} />
-        <StatBubble label="Assists" value={stats.assists} />
-        <StatBubble label="Shots" value={stats.shots} />
-        <StatBubble label="xG" value={stats.xg} />
-      </div>
-
-      <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="text-white font-bold">Match History</h2>
+      <div className="bg-[#111827] border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center gap-5">
+          {player.photo ? (
+            <img src={player.photo} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-[#00d4aa]/30" />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center text-2xl text-slate-400 font-bold">
+              {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl font-black text-white">{player.name}</h1>
+            {player.firstname && player.lastname && (
+              <p className="text-slate-400 text-sm mt-0.5">{player.firstname} {player.lastname}</p>
+            )}
+            <div className="flex flex-wrap gap-2 mt-3 text-xs">
+              {player.nationality && (
+                <span className="px-2 py-0.5 rounded-full bg-[#00d4aa]/10 text-[#00d4aa]">{player.nationality}</span>
+              )}
+              {player.injured && (
+                <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Injured</span>
+              )}
+              {!player.injured && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Fit</span>
+              )}
+            </div>
+          </div>
         </div>
-        {appearances.length === 0 ? (
-          <p className="text-slate-500 text-sm p-5">No appearances recorded.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-slate-400 text-xs uppercase border-b border-gray-800">
-                <th className="text-left px-4 py-3">Date</th>
-                <th className="text-left px-4 py-3">Match</th>
-                <th className="text-center px-4 py-3">Score</th>
-                <th className="text-left px-4 py-3">Competition</th>
-                <th className="text-center px-4 py-3">Position</th>
-                <th className="text-center px-4 py-3">Cards</th>
-                <th className="text-right px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {appearances.map((a) => (
-                <tr key={a.matchId} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30">
-                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
-                    {format(new Date(a.matchDate), 'dd MMM yy')}
-                  </td>
-                  <td className="px-4 py-3 text-slate-200 font-medium whitespace-nowrap">
-                    {a.homeTeam} <span className="text-slate-500">vs</span> {a.awayTeam}
-                  </td>
-                  <td className="px-4 py-3 text-center font-bold text-[#00d4aa] whitespace-nowrap">
-                    {a.homeScore} – {a.awayScore}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">
-                    {a.competition}
-                    <span className="text-slate-600 ml-1">{a.season}</span>
-                  </td>
-                  <td className="px-4 py-3 text-center text-slate-400 text-xs">
-                    {a.positions[0]?.position ?? '—'}
-                    {a.positions[0]?.start_reason === 'Substitution' && (
-                      <span className="text-blue-400 ml-1">sub</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {a.cards.map((c, i) => (
-                      <span
-                        key={i}
-                        className={`inline-block w-3 h-4 rounded-sm mr-0.5 ${c.card_type.toLowerCase().includes('yellow') ? 'bg-yellow-400' : 'bg-red-500'}`}
-                        title={`${c.card_type}: ${c.reason}`}
-                      />
-                    ))}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/matches/${a.matchId}`} className="text-xs text-[#00d4aa] hover:underline">
-                      Detail →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+          <Field label="Age" value={player.age} />
+          <Field label="Nationality" value={player.nationality} />
+          <Field label="Height" value={player.height} />
+          <Field label="Weight" value={player.weight} />
+        </div>
+
+        {player.team && (
+          <div className="mt-5 pt-5 border-t border-white/5">
+            <div className="text-slate-500 text-xs uppercase tracking-wide mb-2">Current Team</div>
+            <Link href={`/teams?team=${player.team.id}`} className="flex items-center gap-3 hover:bg-white/5 rounded-lg p-3 -m-3 transition">
+              {player.team.logo ? (
+                <img src={player.team.logo} alt="" className="w-10 h-10 object-contain" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xs text-slate-300 font-bold">
+                  {player.team.code ?? '?'}
+                </div>
+              )}
+              <div>
+                <p className="text-white font-bold">{player.team.name}</p>
+                <p className="text-slate-500 text-xs">{player.team.country ?? '—'} {player.team.venueName ? `· ${player.team.venueName}` : ''}</p>
+              </div>
+            </Link>
+          </div>
         )}
+
+        <p className="text-slate-600 text-xs mt-6">
+          Match-level statistics (goals, assists, minutes) require <code className="text-slate-500">PlayerMatchStats</code> sync — not included in the free-tier sync flow.
+        </p>
       </div>
     </div>
   );

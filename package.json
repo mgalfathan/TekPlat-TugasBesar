@@ -10,6 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
+    "db:clean-seed": "ts-node --project tsconfig.seed.json prisma/cleanup-seed.ts",
     "db:push": "prisma db push"
   },
   "dependencies": {

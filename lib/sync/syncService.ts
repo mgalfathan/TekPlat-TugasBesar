@@ -184,6 +184,42 @@ export async function syncStandings(providerName: string, leagueExternalId: stri
   return result;
 }
 
+export async function syncPlayersForLeague(providerName: string, leagueExternalId: string, season: string) {
+  const p = getProvider(providerName);
+  const result: SyncResult = { created: 0, updated: 0, errors: [] };
+  const log = await prisma.syncLog.create({ data: { provider: p.name, syncType: 'players', leagueId: leagueExternalId, season } });
+  try {
+    const league = await prisma.league.findFirst({ where: { provider: p.name, externalId: leagueExternalId } });
+    if (!league) throw new Error('League not synced yet');
+    const teams = await prisma.team.findMany({ where: { provider: p.name, homeMatches: { some: { leagueId: league.id } } } });
+    let fetched = 0;
+    for (const team of teams) {
+      try {
+        const players = await p.fetchPlayers(team.externalId, season);
+        fetched += players.length;
+        for (const pl of players) {
+          try {
+            const existing = await prisma.player.findFirst({ where: { provider: p.name, externalId: pl.externalId } });
+            const data = {
+              teamId: team.id, name: pl.name, firstname: pl.firstname, lastname: pl.lastname,
+              age: pl.age, birthDate: pl.birthDate ? new Date(pl.birthDate) : undefined,
+              nationality: pl.nationality, height: pl.height, weight: pl.weight,
+              injured: pl.injured ?? false, photo: pl.photo,
+            };
+            if (existing) { await prisma.player.update({ where: { id: existing.id }, data }); result.updated++; }
+            else { await prisma.player.create({ data: { provider: p.name, externalId: pl.externalId, ...data } }); result.created++; }
+          } catch (e) { result.errors.push(String(e)); }
+        }
+      } catch (e) { result.errors.push(`team ${team.name}: ${e}`); }
+    }
+    await prisma.syncLog.update({ where: { id: log.id }, data: { status: 'success', recordsFetched: fetched, recordsCreated: result.created, recordsUpdated: result.updated, finishedAt: new Date() } });
+  } catch (e) {
+    await prisma.syncLog.update({ where: { id: log.id }, data: { status: 'error', errorMessage: String(e), finishedAt: new Date() } });
+    result.errors.push(String(e));
+  }
+  return result;
+}
+
 export async function syncAll(providerName: string, leagueExternalId: string, season: string, country?: string) {
   await syncLeagues(providerName, country);
   await syncTeams(providerName, leagueExternalId, season);

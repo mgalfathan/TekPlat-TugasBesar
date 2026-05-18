@@ -12,7 +12,13 @@ export async function POST(req: NextRequest) {
     }
     const token = await signToken({ userId: user.id, email: user.email, role: user.role });
     const res = NextResponse.json({ success: true, role: user.role });
-    res.cookies.set('session', token, { httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: '/' });
+    res.cookies.set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
     return res;
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

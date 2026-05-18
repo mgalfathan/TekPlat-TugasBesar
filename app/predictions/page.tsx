@@ -10,10 +10,36 @@ interface Prediction { id: number; homeTeam: Team; awayTeam: Team; homeWinProbab
 export default function PredictionsPage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetch('/api/predictions').then(r => r.json()).then(d => setPredictions(d.predictions ?? [])).finally(() => setLoading(false));
-  }, []);
+  async function load() {
+    setLoading(true);
+    const d = await fetch('/api/predictions').then(r => r.json());
+    setPredictions(d.predictions ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleDelete(id: number) {
+    if (!confirm('Delete this prediction?')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch('/api/predictions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        alert(d.error ?? 'Delete failed');
+        return;
+      }
+      setPredictions(p => p.filter(x => x.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -39,21 +65,31 @@ export default function PredictionsPage() {
       <div className="space-y-4">
         {predictions.map(p => (
           <div key={p.id} className="bg-[#111827] border border-white/5 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  {p.homeTeam.logo && <img src={p.homeTeam.logo} alt="" className="w-7 h-7 object-contain" />}
-                  <span className="text-white font-semibold">{p.homeTeam.name}</span>
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.homeTeam.logo && <img src={p.homeTeam.logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
+                  <span className="text-white font-semibold truncate">{p.homeTeam.name}</span>
                 </div>
-                <span className="text-gray-600 font-bold">vs</span>
-                <div className="flex items-center gap-2">
-                  {p.awayTeam.logo && <img src={p.awayTeam.logo} alt="" className="w-7 h-7 object-contain" />}
-                  <span className="text-white font-semibold">{p.awayTeam.name}</span>
+                <span className="text-gray-600 font-bold shrink-0">vs</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {p.awayTeam.logo && <img src={p.awayTeam.logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
+                  <span className="text-white font-semibold truncate">{p.awayTeam.name}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-[#00d4aa] font-bold text-lg">{p.predictedHomeGoals} – {p.predictedAwayGoals}</div>
-                <div className="text-gray-500 text-xs">Predicted score</div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <div className="text-[#00d4aa] font-bold text-lg">{p.predictedHomeGoals} – {p.predictedAwayGoals}</div>
+                  <div className="text-gray-500 text-xs">Predicted score</div>
+                </div>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  disabled={deletingId === p.id}
+                  title="Delete prediction"
+                  className="text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded p-1.5 transition disabled:opacity-50"
+                >
+                  ✕
+                </button>
               </div>
             </div>
             <ProbabilityBar homeProb={p.homeWinProbability} drawProb={p.drawProbability} awayProb={p.awayWinProbability} homeLabel={p.homeTeam.name} awayLabel={p.awayTeam.name} />
