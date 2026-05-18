@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  name          String?
+  email         String        @unique
+  password      String
+  role          String        @default("USER")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customMetrics CustomMetric[]
+}
+
+model Country {
+  id         Int      @id @default(autoincrement())
+  provider   String
+  externalId String?
+  name       String
+  code       String?
+  flag       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  leagues    League[]
+
+  @@unique([provider, name])
+}
+
+model League {
+  id         Int      @id @default(autoincrement())
+  provider   String
+  externalId String
+  name       String
+  type       String?
+  logo       String?
+  countryId  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  country    Country  @relation(fields: [countryId], references: [id])
+  seasons    Season[]
+  matches    Match[]
+  standings  Standing[]
+
+  @@unique([provider, externalId])
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  provider  String
+  externalId String?
+  leagueId  Int
+  year      String
+  startDate DateTime?
+  endDate   DateTime?
+  current   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  league    League   @relation(fields: [leagueId], references: [id])
+  matches   Match[]
+  standings Standing[]
+
+  @@unique([provider, leagueId, year])
+}
+
+model Team {
+  id           Int              @id @default(autoincrement())
+  provider     String
+  externalId   String
+  name         String
+  code         String?
+  country      String?
+  founded      Int?
+  national     Boolean          @default(false)
+  logo         String?
+  venueName    String?
+  venueCity    String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  homeMatches  Match[]          @relation("HomeTeam")
+  awayMatches  Match[]          @relation("AwayTeam")
+  standings    Standing[]
+  players      Player[]
+  homeStats    TeamMatchStats[] @relation("HomeTeamStats")
+  awayStats    TeamMatchStats[] @relation("AwayTeamStats")
+  matchEvents  MatchEvent[]
+  predictions  Prediction[]     @relation("HomeTeamPred")
+  awayPreds    Prediction[]     @relation("AwayTeamPred")
+
+  @@unique([provider, externalId])
+}
+
+model Player {
+  id               Int               @id @default(autoincrement())
+  provider         String
+  externalId       String
+  teamId           Int?
+  name             String
+  firstname        String?
+  lastname         String?
+  age              Int?
+  birthDate        DateTime?
+  nationality      String?
+  height           String?
+  weight           String?
+  injured          Boolean           @default(false)
+  photo            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  team             Team?             @relation(fields: [teamId], references: [id])
+  matchStats       PlayerMatchStats[]
+  matchEvents      MatchEvent[]
+  assistEvents     MatchEvent[]      @relation("AssistPlayer")
+  metricResults    MetricResult[]
+
+  @@unique([provider, externalId])
+}
+
+model Match {
+  id                  Int              @id @default(autoincrement())
+  provider            String
+  externalId          String
+  leagueId            Int
+  seasonId            Int?
+  homeTeamId          Int
+  awayTeamId          Int
+  referee             String?
+  timezone            String?
+  utcDate             DateTime
+  statusLong          String?
+  statusShort         String           @default("NS")
+  elapsed             Int?
+  venueName           String?
+  venueCity           String?
+  homeScore           Int?
+  awayScore           Int?
+  halftimeHomeScore   Int?
+  halftimeAwayScore   Int?
+  fulltimeHomeScore   Int?
+  fulltimeAwayScore   Int?
+  extraHomeScore      Int?
+  extraAwayScore      Int?
+  penaltyHomeScore    Int?
+  penaltyAwayScore    Int?
+  winner              String?
+  lastSyncedAt        DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  league              League           @relation(fields: [leagueId], references: [id])
+  season              Season?          @relation(fields: [seasonId], references: [id])
+  homeTeam            Team             @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam            Team             @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  teamStats           TeamMatchStats[]
+  playerStats         PlayerMatchStats[]
+  events              MatchEvent[]
+  predictions         Prediction[]
+
+  @@unique([provider, externalId])
+}
+
+model Standing {
+  id               Int      @id @default(autoincrement())
+  provider         String
+  leagueId         Int
+  seasonId         Int?
+  teamId           Int
+  rank             Int
+  points           Int
+  goalsDiff        Int?
+  group            String?
+  form             String?
+  status           String?
+  description      String?
+  played           Int?
+  win              Int?
+  draw             Int?
+  lose             Int?
+  goalsFor         Int?
+  goalsAgainst     Int?
+  homePlayed       Int?
+  homeWin          Int?
+  homeDraw         Int?
+  homeLose         Int?
+  homeGoalsFor     Int?
+  homeGoalsAgainst Int?
+  awayPlayed       Int?
+  awayWin          Int?
+  awayDraw         Int?
+  awayLose         Int?
+  awayGoalsFor     Int?
+  awayGoalsAgainst Int?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  league           League   @relation(fields: [leagueId], references: [id])
+  season           Season?  @relation(fields: [seasonId], references: [id])
+  team             Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([provider, leagueId, teamId])
+}
+
+model TeamMatchStats {
+  id               Int     @id @default(autoincrement())
+  matchId          Int
+  homeTeamId       Int?
+  awayTeamId       Int?
+  shotsOnGoal      Int?
+  shotsOffGoal     Int?
+  totalShots       Int?
+  blockedShots     Int?
+  shotsInsideBox   Int?
+  shotsOutsideBox  Int?
+  fouls            Int?
+  cornerKicks      Int?
+  offsides         Int?
+  ballPossession   String?
+  yellowCards      Int?
+  redCards         Int?
+  goalkeeperSaves  Int?
+  totalPasses      Int?
+  passesAccurate   Int?
+  passesPercentage String?
+  expectedGoals    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  match            Match    @relation(fields: [matchId], references: [id])
+  homeTeam         Team?    @relation("HomeTeamStats", fields: [homeTeamId], references: [id])
+  awayTeam         Team?    @relation("AwayTeamStats", fields: [awayTeamId], references: [id])
+}
+
+model PlayerMatchStats {
+  id                 Int      @id @default(autoincrement())
+  matchId            Int
+  teamId             Int?
+  playerId           Int
+  minutes            Int?
+  number             Int?
+  position           String?
+  rating             String?
+  captain            Boolean  @default(false)
+  substitute         Boolean  @default(false)
+  offsides           Int?
+  shotsTotal         Int?
+  shotsOn            Int?
+  goalsTotal         Int?
+  goalsConceded      Int?
+  assists            Int?
+  saves              Int?
+  passesTotal        Int?
+  passesKey          Int?
+  passesAccuracy     String?
+  tacklesTotal       Int?
+  tacklesBlocks      Int?
+  tacklesInterceptions Int?
+  duelsTotal         Int?
+  duelsWon           Int?
+  dribblesAttempts   Int?
+  dribblesSuccess    Int?
+  foulsDrawn         Int?
+  foulsCommitted     Int?
+  cardsYellow        Int?
+  cardsRed           Int?
+  penaltyWon         Int?
+  penaltyCommitted   Int?
+  penaltyScored      Int?
+  penaltyMissed      Int?
+  penaltySaved       Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  match              Match    @relation(fields: [matchId], references: [id])
+  player             Player   @relation(fields: [playerId], references: [id])
+}
+
+model MatchEvent {
+  id             Int      @id @default(autoincrement())
+  provider       String
+  externalId     String?
+  matchId        Int
+  teamId         Int?
+  playerId       Int?
+  assistPlayerId Int?
+  elapsed        Int?
+  extra          Int?
+  type           String?
+  detail         String?
+  comments       String?
+  createdAt      DateTime @default(now())
+  match          Match    @relation(fields: [matchId], references: [id])
+  team           Team?    @relation(fields: [teamId], references: [id])
+  player         Player?  @relation(fields: [playerId], references: [id])
+  assistPlayer   Player?  @relation("AssistPlayer", fields: [assistPlayerId], references: [id])
+}
+
+model Prediction {
+  id                   Int      @id @default(autoincrement())
+  matchId              Int?
+  homeTeamId           Int
+  awayTeamId           Int
+  leagueId             Int?
+  season               String?
+  homeWinProbability   Float
+  drawProbability      Float
+  awayWinProbability   Float
+  predictedHomeGoals   Float
+  predictedAwayGoals   Float
+  confidence           Float
+  explanation          String?
+  factors              String?
+  modelVersion         String   @default("v1")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  match                Match?   @relation(fields: [matchId], references: [id])
+  homeTeam             Team     @relation("HomeTeamPred", fields: [homeTeamId], references: [id])
+  awayTeam             Team     @relation("AwayTeamPred", fields: [awayTeamId], references: [id])
+}
+
+model CustomMetric {
+  id          Int            @id @default(autoincrement())
+  userId      Int?
+  name        String
+  scope       String         @default("team")
+  formula     String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  user        User?          @relation(fields: [userId], references: [id])
+  results     MetricResult[]
+}
+
+model MetricResult {
+  id             Int          @id @default(autoincrement())
+  customMetricId Int
+  teamId         Int?
+  playerId       Int?
+  result         Float
+  createdAt      DateTime     @default(now())
+  customMetric   CustomMetric @relation(fields: [customMetricId], references: [id])
+  player         Player?      @relation(fields: [playerId], references: [id])
+}
+
+model SyncLog {
+  id             Int       @id @default(autoincrement())
+  provider       String
+  syncType       String
+  country        String?
+  leagueId       String?
+  season         String?
+  status         String    @default("running")
+  recordsFetched Int       @default(0)
+  recordsCreated Int       @default(0)
+  recordsUpdated Int       @default(0)
+  errorMessage   String?
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+}
+
+// ---- StatsBomb open data models (kept as-is) ----
+
+model SbCompetition {
+  id                Int       @id @default(autoincrement())
+  competitionId     Int
+  seasonId          Int
+  competitionName   String
+  countryName       String
+  competitionGender String    @default("male")
+  seasonName        String
+  matches           SbMatch[]
+
+  @@unique([competitionId, seasonId])
+}
+
+model SbTeam {
+  id            Int             @id @default(autoincrement())
+  statsbombId   Int             @unique
+  name          String
+  gender        String?
+  country       String?
+  homeMatches   SbMatch[]       @relation("SbHomeTeam")
+  awayMatches   SbMatch[]       @relation("SbAwayTeam")
+  lineupEntries SbLineupEntry[]
+  events        SbEvent[]
+}
+
+model SbPlayer {
+  id            Int             @id @default(autoincrement())
+  statsbombId   Int             @unique
+  name          String
+  nickname      String?
+  country       String?
+  lineupEntries SbLineupEntry[]
+  events        SbEvent[]
+}
+
+model SbMatch {
+  id            Int             @id @default(autoincrement())
+  statsbombId   Int             @unique
+  competitionId Int
+  homeTeamId    Int
+  awayTeamId    Int
+  homeScore     Int?
+  awayScore     Int?
+  matchDate     DateTime
+  kickOff       String?
+  matchWeek     Int?
+  stage         String?
+  stadium       String?
+  referee       String?
+  competition   SbCompetition   @relation(fields: [competitionId], references: [id])
+  homeTeam      SbTeam          @relation("SbHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam      SbTeam          @relation("SbAwayTeam", fields: [awayTeamId], references: [id])
+  lineupEntries SbLineupEntry[]
+  events        SbEvent[]
+}
+
+model SbLineupEntry {
+  id           Int      @id @default(autoincrement())
+  matchId      Int
+  teamId       Int
+  playerId     Int
+  jerseyNumber Int?
+  positions    String?
+  cards        String?
+  match        SbMatch  @relation(fields: [matchId], references: [id])
+  team         SbTeam   @relation(fields: [teamId], references: [id])
+  player       SbPlayer @relation(fields: [playerId], references: [id])
+
+  @@unique([matchId, teamId, playerId])
+}
+
+model SbEvent {
+  id         String    @id
+  matchId    Int
+  eventIndex Int
+  period     Int
+  minute     Int
+  second     Int
+  typeName   String
+  playerId   Int?
+  playerName String?
+  teamId     Int?
+  teamName   String?
+  location   String?
+  extras     String?
+  match      SbMatch   @relation(fields: [matchId], references: [id])
+  player     SbPlayer? @relation(fields: [playerId], references: [id])
+  team       SbTeam?   @relation(fields: [teamId], references: [id])
+}
