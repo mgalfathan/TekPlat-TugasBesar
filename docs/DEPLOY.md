@@ -1,5 +1,9 @@
 # Deploy: Cloudflare Pages + Postgres on a VM
 
+> 📌 **Looking for the simpler path?** See [**DEPLOY_CLOUDFLARE_TUNNEL.md**](./DEPLOY_CLOUDFLARE_TUNNEL.md) — Cloudflare Tunnel + Next.js + SQLite on a single VM. Far less fiddly than Workers + Prisma adapters. Recommended for small/medium deployments.
+
+---
+
 This guide walks you through deploying Sportlytics to **Cloudflare Pages** with the **Postgres database hosted on your own VM** (DigitalOcean, Hetzner, Linode, etc.).
 
 Cost estimate: $5–10/month for a small VM + free Cloudflare Pages tier.
