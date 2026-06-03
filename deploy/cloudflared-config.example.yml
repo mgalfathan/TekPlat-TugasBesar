@@ -1,0 +1,16 @@
+# Copy to ~/.cloudflared/config.yml on the VM and replace placeholders.
+# After editing, run:
+#   sudo cloudflared service install
+#   sudo systemctl restart cloudflared
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /home/REPLACE_WITH_VM_USER/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  - hostname: sportlytics.stei.cloud
+    service: http://localhost:3000
+    originRequest:
+      noTLSVerify: true
+      connectTimeout: 30s
+  # Fallback — anything else returns 404
+  - service: http_status:404
