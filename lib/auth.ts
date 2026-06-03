@@ -46,3 +46,11 @@ export async function requireAdmin(): Promise<JWTPayload> {
   }
   return session;
 }
+
+export async function requireUser(): Promise<JWTPayload> {
+  const session = await getSession();
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+  return session;
+}

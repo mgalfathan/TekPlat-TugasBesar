@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { evaluateFormula } from '@/lib/metrics/customMetricEngine';
+import { requireUser } from '@/lib/auth';
 
 const FINISHED = ['FT', 'AET', 'PEN', 'FINISHED'];
 
@@ -12,6 +13,7 @@ function parseFirstNumber(s: string | null | undefined): number {
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const session = await requireUser();
     const metricId = parseInt(params.id);
     if (isNaN(metricId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
@@ -19,14 +21,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const leagueId = searchParams.get('leagueId');
     const season = searchParams.get('season');
 
-    const metric = await prisma.customMetric.findUniqueOrThrow({ where: { id: metricId } });
+    const metric = await prisma.customMetric.findFirst({
+      where: { id: metricId, userId: session.userId },
+    });
+    if (!metric) return NextResponse.json({ error: 'Metric not found' }, { status: 404 });
 
     if (metric.scope === 'team') {
       return await computeTeamResults(metric, leagueId, season);
     }
     return await computePlayerResults(metric, leagueId, season);
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Failed';
+    return NextResponse.json({ error: message }, { status: message === 'Unauthorized' ? 401 : 500 });
   }
 }
 

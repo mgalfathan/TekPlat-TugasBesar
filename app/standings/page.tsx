@@ -6,13 +6,15 @@ import ErrorState from '@/components/ErrorState';
 
 interface Team { name: string; logo?: string | null }
 interface League { id: number; name: string; country?: { name: string } | null }
-interface Standing { id: number; rank: number; team: Team; points: number; played?: number | null; win?: number | null; draw?: number | null; lose?: number | null; goalsFor?: number | null; goalsAgainst?: number | null; goalsDiff?: number | null }
+interface Standing { id: number; rank: number; team: Team; league: League; points: number; played?: number | null; win?: number | null; draw?: number | null; lose?: number | null; goalsFor?: number | null; goalsAgainst?: number | null; goalsDiff?: number | null }
+type SortMode = 'points' | 'rank';
 
 export default function StandingsPage() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [leagueId, setLeagueId] = useState('');
   const [season, setSeason] = useState('2024');
+  const [sortBy, setSortBy] = useState<SortMode>('points');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -22,12 +24,13 @@ export default function StandingsPage() {
       const qs = new URLSearchParams();
       if (leagueId) qs.set('leagueId', leagueId);
       if (season) qs.set('season', season);
+      qs.set('sort', sortBy);
       const data = await fetch(`/api/standings?${qs}`).then(r => r.json());
       setStandings(data.standings ?? []);
       setLeagues(data.leagues ?? []);
     } catch { setError('Failed to load standings'); }
     finally { setLoading(false); }
-  }, [leagueId, season]);
+  }, [leagueId, season, sortBy]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -38,7 +41,18 @@ export default function StandingsPage() {
           <h1 className="text-2xl font-bold text-white">Standings</h1>
           <p className="text-gray-500 text-sm">Official league tables</p>
         </div>
-        <LeagueSeasonSelector leagues={leagues} selectedLeagueId={leagueId} selectedSeason={season} onLeagueChange={setLeagueId} onSeasonChange={setSeason} />
+        <div className="flex flex-wrap items-center gap-3">
+          <LeagueSeasonSelector leagues={leagues} selectedLeagueId={leagueId} selectedSeason={season} onLeagueChange={setLeagueId} onSeasonChange={setSeason} />
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as SortMode)}
+            className="bg-[#1a2535] border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00d4aa]"
+            aria-label="Sort standings"
+          >
+            <option value="points">Sort by points</option>
+            <option value="rank">Sort by rank</option>
+          </select>
+        </div>
       </div>
       {loading && <LoadingSkeleton rows={10} />}
       {error && <ErrorState message={error} onRetry={fetchData} />}
@@ -51,6 +65,7 @@ export default function StandingsPage() {
             <thead><tr className="border-b border-white/5 text-gray-500 text-xs uppercase">
               <th className="text-left px-4 py-3">#</th>
               <th className="text-left px-4 py-3">Team</th>
+              {!leagueId && <th className="text-left px-3 py-3">League</th>}
               <th className="text-center px-3 py-3">P</th>
               <th className="text-center px-3 py-3 text-green-400">W</th>
               <th className="text-center px-3 py-3">D</th>
@@ -68,6 +83,7 @@ export default function StandingsPage() {
                     {s.team.logo && <img src={s.team.logo} alt="" className="w-5 h-5 object-contain" />}
                     <span className="text-white font-medium">{s.team.name}</span>
                   </div></td>
+                  {!leagueId && <td className="px-3 py-3 text-gray-400 text-xs">{s.league.name}</td>}
                   <td className="text-center px-3 py-3 text-gray-400">{s.played ?? '-'}</td>
                   <td className="text-center px-3 py-3 text-green-400">{s.win ?? '-'}</td>
                   <td className="text-center px-3 py-3 text-gray-400">{s.draw ?? '-'}</td>

@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "preview": "opennextjs-cloudflare build && wrangler dev",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
@@ -28,6 +30,7 @@
     "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.0.0-beta.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -38,6 +41,7 @@
     "prisma": "^5.16.1",
     "tailwindcss": "^3.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.92.0"
   }
 }

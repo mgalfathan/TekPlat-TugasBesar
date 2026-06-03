@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/lib/auth';
 
 const FINISHED = ['FT', 'AET', 'PEN', 'FINISHED'];
 
 export async function GET() {
   try {
+    const session = await requireUser();
     const [totalTeams, totalMatches, totalPredictions, totalPlayers, finishedCount, recentMatches, topStandings] = await Promise.all([
       prisma.team.count(),
       prisma.match.count(),
-      prisma.prediction.count(),
+      prisma.prediction.count({ where: { userId: session.userId } }),
       prisma.player.count(),
       prisma.match.count({ where: { statusShort: { in: FINISHED } } }),
       prisma.match.findMany({
@@ -27,6 +29,7 @@ export async function GET() {
       recentMatches, topStandings,
     });
   } catch (err: unknown) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Failed';
+    return NextResponse.json({ error: message }, { status: message === 'Unauthorized' ? 401 : 500 });
   }
 }

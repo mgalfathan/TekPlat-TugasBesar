@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -37,11 +38,7 @@ export default function AdminLoginPage() {
             placeholder="Email" required
             className="w-full bg-[#1a2535] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4aa]"
           />
-          <input
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Password" required
-            className="w-full bg-[#1a2535] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4aa]"
-          />
+          <PasswordInput value={password} onChange={setPassword} placeholder="Password" required />
           <button
             type="submit" disabled={loading}
             className="w-full bg-[#00d4aa] hover:bg-[#00b899] text-black font-semibold py-2 rounded-lg transition disabled:opacity-50"
