@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e]">
       <div className="bg-[#111827] border border-white/10 rounded-xl p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
-        <p className="text-gray-400 text-sm mb-6">Sportlytics administration</p>
+        <p className="text-gray-400 text-sm mb-6">The Gaffer administration</p>
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

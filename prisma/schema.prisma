@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -451,4 +453,63 @@ model SbEvent {
   match      SbMatch   @relation(fields: [matchId], references: [id])
   player     SbPlayer? @relation(fields: [playerId], references: [id])
   team       SbTeam?   @relation(fields: [teamId], references: [id])
+}
+
+// ============================================================
+// SoFIFA — FIFA/FC player & team ratings
+// ============================================================
+
+model SofifaLeague {
+  id        Int          @id
+  name      String
+  country   String
+  gender    String       @default("male")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  teams     SofifaTeam[]
+}
+
+model SofifaTeam {
+  id             Int            @id
+  name           String
+  leagueId       Int
+  country        String?
+  overallRating  Int
+  attackRating   Int
+  midfieldRating Int
+  defenseRating  Int
+  latestRoster   String?
+  logoUrl        String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  league         SofifaLeague   @relation(fields: [leagueId], references: [id])
+  players        SofifaPlayer[]
+}
+
+model SofifaPlayer {
+  id            Int          @id
+  teamId        Int?
+  name          String
+  positions     String
+  posGroup      String
+  overallRating Int
+  potential     Int?
+  age           Int?
+  nationality   String?
+  photoUrl      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  team          SofifaTeam?  @relation(fields: [teamId], references: [id])
+}
+
+model SofifaSyncLog {
+  id           Int       @id @default(autoincrement())
+  leagueId     Int?
+  leagueName   String?
+  status       String    @default("running")
+  teamsCount   Int       @default(0)
+  playersCount Int       @default(0)
+  errorMsg     String?
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
 }
