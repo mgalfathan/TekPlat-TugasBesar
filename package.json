@@ -16,6 +16,8 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "@prisma/adapter-neon": "^5.22.0",
     "@prisma/client": "^5.16.1",
     "@types/bcryptjs": "^2.4.6",
     "axios": "^1.7.2",

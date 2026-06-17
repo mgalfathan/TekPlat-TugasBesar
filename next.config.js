@@ -6,6 +6,8 @@ const nextConfig = {
         protocol: "https",
         hostname: "crests.football-data.org",
       },
+      { protocol: "https", hostname: "cdn.sofifa.net" },
+      { protocol: "https", hostname: "cdn.sofifa.com" },
     ],
   },
 };

@@ -3,8 +3,8 @@ import './globals.css';
 import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'Sportlytics — Football Analytics',
-  description: 'Real football analytics and prediction platform',
+  title: 'The Gaffer — Football Data & Analytics Platform',
+  description: 'Explore football results, standings and stats, build custom metrics, and simulate full seasons — football analytics made simple.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

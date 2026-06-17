@@ -13,11 +13,10 @@ async function verifyToken(token: string) {
 const ADMIN_PATHS = ['/admin', '/api/admin'];
 const USER_PATHS = [
   '/dashboard',
-  '/predictions',
+  '/simulator',
   '/metrics',
   '/leaderboard',
   '/api/dashboard',
-  '/api/predictions',
   '/api/custom-metrics',
 ];
 
@@ -60,11 +59,10 @@ export const config = {
     '/admin/:path*',
     '/api/admin/:path*',
     '/dashboard/:path*',
-    '/predictions/:path*',
+    '/simulator/:path*',
     '/metrics/:path*',
     '/leaderboard/:path*',
     '/api/dashboard/:path*',
-    '/api/predictions/:path*',
     '/api/custom-metrics/:path*',
   ],
 };

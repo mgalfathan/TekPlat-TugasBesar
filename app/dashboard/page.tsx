@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Link href="/teams"><StatCard label="Teams" value={data.stats.totalTeams} accent="green" /></Link>
         <StatCard label="Matches" value={data.stats.totalMatches} accent="blue" />
-        <Link href="/predictions"><StatCard label="Predictions" value={data.stats.totalPredictions} accent="amber" /></Link>
+        <StatCard label="Predictions" value={data.stats.totalPredictions} accent="amber" />
         <Link href="/players"><StatCard label="Players" value={data.stats.totalPlayers} accent="green" /></Link>
         <StatCard label="Finished" value={data.stats.finishedCount} accent="amber" />
       </div>

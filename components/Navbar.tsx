@@ -9,7 +9,7 @@ const links = [
   { href: '/results', label: 'Results' },
   { href: '/standings', label: 'Standings' },
   { href: '/leaderboard', label: 'Analytics' },
-  { href: '/predictions', label: 'Predictions' },
+  { href: '/simulator', label: 'Simulator' },
   { href: '/metrics', label: 'Metrics' },
   { href: '/teams', label: 'Teams' },
   { href: '/players', label: 'Players' },
@@ -40,7 +40,7 @@ export function Navbar() {
   return (
     <nav className="border-b border-white/5 bg-[#0d1424]/95 backdrop-blur sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 flex items-center gap-4 h-14">
-        <Link href="/" className="text-[#00d4aa] font-bold text-lg tracking-tight shrink-0">⚽ Sportlytics</Link>
+        <Link href="/" className="text-[#00d4aa] font-bold text-lg tracking-tight shrink-0">⚽ The Gaffer</Link>
         <div className="flex items-center gap-0.5 overflow-x-auto flex-1">
           {links.map((l) => (
             <Link key={l.href} href={l.href}
