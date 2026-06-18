@@ -5,14 +5,14 @@ import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 const links = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/results', label: 'Results' },
-  { href: '/standings', label: 'Standings' },
-  { href: '/leaderboard', label: 'Analytics' },
-  { href: '/simulator', label: 'Simulator' },
-  { href: '/metrics', label: 'Metrics' },
-  { href: '/teams', label: 'Teams' },
-  { href: '/players', label: 'Players' },
+  { href: '/dashboard', n: '01', label: 'Dashboard' },
+  { href: '/leaderboard', n: '02', label: 'Analytics' },
+  { href: '/results', n: '03', label: 'Results' },
+  { href: '/metrics', n: '04', label: 'Metrics' },
+  { href: '/standings', n: '05', label: 'Standings' },
+  { href: '/simulator', n: '06', label: 'Simulator' },
+  { href: '/teams', n: '07', label: 'Teams' },
+  { href: '/players', n: '08', label: 'Players' },
 ];
 
 interface User { id: number; email: string; role: string }
@@ -38,49 +38,76 @@ export function Navbar() {
   }
 
   return (
-    <nav className="border-b border-white/5 bg-[#0d1424]/95 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 flex items-center gap-4 h-14">
-        <Link href="/" className="text-[#00d4aa] font-bold text-lg tracking-tight shrink-0">⚽ The Gaffer</Link>
-        <div className="flex items-center gap-0.5 overflow-x-auto flex-1">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href}
-              className={clsx('px-3 py-1.5 rounded text-sm font-medium whitespace-nowrap transition-colors',
-                pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href))
-                  ? 'bg-[#00d4aa]/15 text-[#00d4aa]'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
-              )}>
-              {l.label}
-            </Link>
-          ))}
+    <nav className="sticky top-0 z-50 border-b border-border bg-[rgba(11,12,8,0.86)] backdrop-blur-[14px]">
+      <div className="max-w-page mx-auto flex items-center gap-6 h-16 px-7">
+        <Link
+          href="/"
+          className="font-display text-2xl uppercase tracking-[0.5px] shrink-0 whitespace-nowrap"
+        >
+          THE<span className="text-lime">GAFFER</span>
+        </Link>
+
+        <div className="flex items-center gap-0.5 overflow-x-auto flex-1 scrollbar-thin">
+          {links.map((l) => {
+            const active = pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href));
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={clsx(
+                  'flex items-center gap-[7px] px-[13px] py-2 rounded-[7px] font-mono text-[11.5px] font-medium uppercase tracking-[0.06em] whitespace-nowrap transition-colors',
+                  active
+                    ? 'bg-lime text-lime-ink'
+                    : 'text-muted hover:text-ink hover:bg-white/[0.04]'
+                )}
+              >
+                <span className={clsx('font-bold', active ? 'text-lime-ink/55' : 'text-muted-2')}>{l.n}</span>
+                {l.label}
+              </Link>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+
+        <div className="flex items-center gap-2.5 shrink-0">
           {isAdminPage && (
-            <Link href="/" className="text-xs text-gray-500 hover:text-gray-300 transition">← App</Link>
+            <Link href="/" className="font-mono text-[11px] text-muted-2 hover:text-ink transition-colors">← App</Link>
           )}
           {user ? (
             <>
               {user.role === 'ADMIN' && !isAdminPage && (
-                <Link href="/admin/sync" className="px-3 py-1.5 rounded text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition font-semibold">
-                  Admin
+                <Link
+                  href="/admin/sync"
+                  className="font-mono text-[11px] font-semibold tracking-[0.05em] text-lime border border-[rgba(200,242,58,0.3)] bg-[rgba(200,242,58,0.08)] px-[11px] py-[7px] rounded-[7px] hover:bg-[rgba(200,242,58,0.16)] transition-colors"
+                >
+                  ADMIN
                 </Link>
               )}
-              <span className="hidden md:inline text-xs text-slate-400">
-                {user.email}
-                <span className={clsx('ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold',
-                  user.role === 'ADMIN' ? 'bg-amber-500/15 text-amber-400' : 'bg-[#00d4aa]/15 text-[#00d4aa]'
-                )}>{user.role}</span>
+              <span className="hidden md:inline font-mono text-[11px] text-muted">
+                <b className="font-medium text-ink">{user.email}</b>
+                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9.5px] font-bold tracking-[0.05em] bg-[rgba(200,242,58,0.16)] text-lime">
+                  {user.role}
+                </span>
               </span>
-              <button onClick={handleLogout} className="px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-white/5 transition">
-                Logout
+              <button
+                onClick={handleLogout}
+                className="font-mono text-[11px] text-muted-2 border border-border px-[11px] py-[7px] rounded-[7px] hover:text-ink hover:border-border-2 transition-colors"
+              >
+                LOGOUT
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="px-3 py-1.5 rounded text-xs text-slate-300 hover:text-white hover:bg-white/5 transition">
-                Login
+              <Link
+                href="/login"
+                className="font-mono text-[11px] text-muted-2 border border-border px-[11px] py-[7px] rounded-[7px] hover:text-ink hover:border-border-2 transition-colors"
+              >
+                LOGIN
               </Link>
-              <Link href="/register" className="px-3 py-1.5 rounded text-xs bg-[#00d4aa] text-black font-semibold hover:bg-[#00b899] transition">
-                Register
+              <Link
+                href="/register"
+                className="font-mono text-[11px] font-bold tracking-[0.05em] bg-lime text-lime-ink px-[13px] py-[7px] rounded-[7px] hover:brightness-110 transition"
+              >
+                REGISTER
               </Link>
             </>
           )}

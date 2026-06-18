@@ -14,10 +14,24 @@ interface Result {
   homeTeam: Team; awayTeam: Team; league: League;
 }
 
-function winnerBadge(winner: string | null, isHome: boolean) {
-  if (!winner) return null;
-  const isWinner = (winner === 'HOME_TEAM' && isHome) || (winner === 'AWAY_TEAM' && !isHome);
-  return isWinner ? <span className="text-xs text-emerald-400 font-bold ml-1">W</span> : null;
+function hueOf(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+}
+
+function Crest({ team, size = 26 }: { team: Team; size?: number }) {
+  if (team.logo) return <img src={team.logo} alt="" className="object-contain flex-none" style={{ width: size, height: size }} />;
+  const code = team.code ?? team.name.slice(0, 3).toUpperCase();
+  const h = hueOf(code);
+  return (
+    <div
+      className="rounded-[8px] flex items-center justify-center flex-none shadow-[inset_0_0_0_1px_rgba(255,255,255,.12)]"
+      style={{ width: size, height: size, background: `linear-gradient(150deg, hsl(${h} 40% 38%), hsl(${h} 40% 24%))` }}
+    >
+      <span className="font-display text-white tracking-[0.5px]" style={{ fontSize: Math.round(size * 0.34) }}>{code}</span>
+    </div>
+  );
 }
 
 export default function ResultsPage() {
@@ -44,48 +58,55 @@ export default function ResultsPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="gaffer-screen space-y-7">
+      <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <h1 className="text-3xl font-black text-white mb-1">Results</h1>
-          <p className="text-slate-400">{results.length} recent results</p>
+          <div className="flex items-center gap-2.5 font-mono text-xs font-bold tracking-[0.14em] text-lime uppercase mb-3.5">
+            <span className="bg-lime text-lime-ink px-1.5 py-px rounded">03</span>
+            <span>Results</span>
+          </div>
+          <h1 className="font-display uppercase text-ink leading-[0.9] tracking-[0.5px] text-[clamp(40px,6.4vw,82px)] mb-4">
+            Every<br />final whistle.
+          </h1>
+          <p className="text-muted text-base leading-relaxed max-w-[620px] text-pretty">
+            The latest {results.length} results across the top leagues — tap any match for the full breakdown.
+          </p>
         </div>
         <LeagueSeasonSelector leagues={leagues} selectedLeagueId={leagueId} selectedSeason={season} onLeagueChange={setLeagueId} onSeasonChange={setSeason} />
-      </div>
+      </header>
 
       {loading ? <LoadingSpinner message="Loading results..." /> :
        results.length === 0 ? <EmptyState title="No results yet" description="Try a different league/season, or sync data in Admin → Sync." /> : (
-        <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-800 text-slate-400 text-xs uppercase">
-              <th className="text-left px-4 py-3">Date</th>
-              <th className="text-left px-4 py-3">Home</th>
-              <th className="text-center px-4 py-3">Score</th>
-              <th className="text-left px-4 py-3">Away</th>
-              <th className="text-left px-4 py-3">League</th>
-            </tr></thead>
-            <tbody>
-              {results.map(r => (
-                <tr key={r.id} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 cursor-pointer" onClick={() => router.push(`/matches/${r.id}`)}>
-                  <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{format(new Date(r.utcDate), 'dd MMM yyyy')}</td>
-                  <td className="px-4 py-3 font-medium text-slate-200">
-                    <div className="flex items-center gap-2">
-                      {r.homeTeam.logo && <img src={r.homeTeam.logo} alt="" className="w-5 h-5 object-contain" />}
-                      <span>{r.homeTeam.name}{winnerBadge(r.winner, true)}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center font-black text-[#00d4aa]">{r.homeScore} – {r.awayScore}</td>
-                  <td className="px-4 py-3 font-medium text-slate-200">
-                    <div className="flex items-center gap-2">
-                      {r.awayTeam.logo && <img src={r.awayTeam.logo} alt="" className="w-5 h-5 object-contain" />}
-                      <span>{r.awayTeam.name}{winnerBadge(r.winner, false)}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{r.league.name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-panel border border-border rounded-card p-2 sm:p-3">
+          <div className="flex flex-col">
+            {results.map(r => {
+              const hw = r.winner === 'HOME_TEAM';
+              const aw = r.winner === 'AWAY_TEAM';
+              return (
+                <div
+                  key={r.id}
+                  onClick={() => router.push(`/matches/${r.id}`)}
+                  className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-3 px-3 py-3 border-b border-border last:border-0 cursor-pointer rounded-lg hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Crest team={r.homeTeam} size={26} />
+                    <span className={`text-[13.5px] font-semibold truncate ${hw ? 'text-ink' : 'text-muted'}`}>{r.homeTeam.name}</span>
+                  </div>
+                  <div className="font-display text-[22px] flex items-center gap-1.5 text-ink">
+                    {r.homeScore}<span className="text-muted-2 text-[15px]">–</span>{r.awayScore}
+                  </div>
+                  <div className="flex items-center gap-2.5 min-w-0 justify-end">
+                    <span className={`text-[13.5px] font-semibold truncate ${aw ? 'text-ink' : 'text-muted'}`}>{r.awayTeam.name}</span>
+                    <Crest team={r.awayTeam} size={26} />
+                  </div>
+                  <div className="text-right min-w-[80px]">
+                    <div className="font-mono text-[10px] text-muted-2">{format(new Date(r.utcDate), 'dd MMM yyyy')}</div>
+                    <div className="font-mono text-[9px] text-muted-2/70 truncate">{r.league.name}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getSofifaTeams } from '@/lib/sofifa-dataset';
 
+// Served from the static EA FC26 CSV-derived dataset (no database).
 export async function GET(req: NextRequest) {
   const leagueId = req.nextUrl.searchParams.get('leagueId');
   if (!leagueId) {
     return NextResponse.json({ error: 'leagueId required' }, { status: 400 });
   }
-  const teams = await prisma.sofifaTeam.findMany({
-    where: { leagueId: parseInt(leagueId) },
-    orderBy: { overallRating: 'desc' },
-  });
+  const teams = getSofifaTeams(parseInt(leagueId));
   return NextResponse.json({ teams }, {
     headers: { 'Cache-Control': 'public, max-age=3600' },
   });
