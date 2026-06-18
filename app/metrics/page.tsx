@@ -47,81 +47,80 @@ export default function MetricsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Custom Metrics</h1>
-        <p className="text-gray-500 text-sm mt-1">Build analytics formulas using team or player variables. Click <span className="text-[#00d4aa]">View Results</span> on a metric to see the leaderboard.</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
-          <h2 className="text-white font-semibold mb-4">Metric Builder</h2>
-          <MetricBuilder onSave={handleSave} />
+    <div className="gaffer-screen space-y-7">
+      <header>
+        <div className="flex items-center gap-2.5 font-mono text-xs font-bold tracking-[0.14em] text-lime uppercase mb-3.5">
+          <span className="bg-lime text-lime-ink px-1.5 py-px rounded">04</span>
+          <span>Custom Metrics</span>
         </div>
+        <h1 className="font-display uppercase text-ink leading-[0.9] tracking-[0.5px] text-[clamp(40px,6.4vw,82px)] mb-4">
+          Build your<br />own rating.
+        </h1>
+        <p className="text-muted text-base leading-relaxed max-w-[620px] text-pretty">
+          Compose a formula from team or player variables, save it, and rank the league instantly.
+        </p>
+      </header>
 
-        <div>
-          <h2 className="text-white font-semibold mb-4">Saved Metrics ({metrics.length})</h2>
-          {metrics.length === 0 && <p className="text-gray-500 text-sm">No metrics saved yet.</p>}
-          <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <section className="bg-panel border border-border rounded-card p-[22px]">
+          <h2 className="text-base font-extrabold text-ink mb-4">Metric Builder</h2>
+          <MetricBuilder onSave={handleSave} />
+        </section>
+
+        <section>
+          <h2 className="text-base font-extrabold text-ink mb-4 px-0.5">Saved Metrics · {metrics.length}</h2>
+          {metrics.length === 0 && <p className="text-muted-2 text-sm px-0.5">No metrics saved yet.</p>}
+          <div className="flex flex-col gap-3">
             {metrics.map(m => (
-              <div key={m.id} className="bg-[#111827] border border-white/5 rounded-xl p-4">
+              <div key={m.id} className="bg-panel border border-border rounded-inset p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-medium">{m.name}</span>
-                      <span className="px-1.5 py-0.5 rounded text-xs bg-[#00d4aa]/10 text-[#00d4aa] capitalize">{m.scope}</span>
+                      <span className="text-ink font-extrabold text-[14.5px]">{m.name}</span>
+                      <span className="font-mono text-[9px] tracking-[0.06em] uppercase bg-[rgba(200,242,58,0.14)] text-lime px-1.5 py-0.5 rounded-[5px]">{m.scope}</span>
                     </div>
-                    <p className="text-[#00d4aa] font-mono text-xs truncate">{m.formula}</p>
-                    {m.description && <p className="text-gray-500 text-xs mt-1">{m.description}</p>}
+                    <p className="text-lime font-mono text-xs truncate mt-2">{m.formula}</p>
+                    {m.description && <p className="text-muted text-xs mt-1.5 leading-relaxed">{m.description}</p>}
                   </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <button onClick={() => viewResults(m.id)} className="text-xs px-2 py-1 rounded bg-[#00d4aa]/10 text-[#00d4aa] hover:bg-[#00d4aa]/20 transition">
-                      {openId === m.id ? 'Hide' : 'View Results'}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => viewResults(m.id)}
+                      className={`font-mono text-[10px] font-bold tracking-[0.06em] px-2.5 py-1.5 rounded-[7px] border transition ${
+                        openId === m.id ? 'bg-lime text-lime-ink border-lime' : 'bg-white/[0.05] text-muted border-border hover:text-ink'
+                      }`}>
+                      {openId === m.id ? 'HIDE' : 'RESULTS'}
                     </button>
-                    <button onClick={() => handleDelete(m.id)} className="text-xs px-2 py-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition">✕</button>
+                    <button onClick={() => handleDelete(m.id)} className="font-mono text-[11px] px-2 py-1.5 rounded-[7px] text-muted-2 hover:text-loss hover:bg-loss/10 transition">✕</button>
                   </div>
                 </div>
 
                 {openId === m.id && (
-                  <div className="mt-3 pt-3 border-t border-white/5">
-                    {loadingResults && <p className="text-gray-500 text-xs">Computing…</p>}
-                    {resultsError && <p className="text-red-400 text-xs">{resultsError}</p>}
+                  <div className="mt-3.5 pt-3.5 border-t border-border">
+                    {loadingResults && <p className="text-muted-2 font-mono text-[11px]">Computing…</p>}
+                    {resultsError && <p className="text-loss text-xs">{resultsError}</p>}
                     {!loadingResults && !resultsError && results.length === 0 && (
-                      <p className="text-gray-500 text-xs">No data. Sync match/standings data first (Admin → Sync), then try again.</p>
+                      <p className="text-muted-2 text-xs">No data. Sync match/standings data first (Admin → Sync), then try again.</p>
                     )}
                     {!loadingResults && results.length > 0 && (
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="text-gray-500 border-b border-white/5">
-                            <th className="text-left py-1.5 w-8">#</th>
-                            <th className="text-left py-1.5">{m.scope === 'team' ? 'Team' : 'Player'}</th>
-                            {m.scope === 'team' && <th className="text-center py-1.5">MP</th>}
-                            <th className="text-right py-1.5 text-[#00d4aa]">Score</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {results.map((r, i) => (
-                            <tr key={(r.teamId ?? r.playerId ?? i)} className="border-b border-white/5 last:border-0">
-                              <td className="py-1.5 text-gray-500">{i + 1}</td>
-                              <td className="py-1.5">
-                                <div className="flex items-center gap-2">
-                                  {r.logo && <img src={r.logo} alt="" className="w-4 h-4 object-contain" />}
-                                  <span className="text-white">{r.teamName ?? r.playerName}</span>
-                                </div>
-                              </td>
-                              {m.scope === 'team' && <td className="py-1.5 text-center text-gray-400">{r.matches_played ?? '-'}</td>}
-                              <td className="py-1.5 text-right text-[#00d4aa] font-mono">{r.score.toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="flex flex-col">
+                        {results.map((r, i) => (
+                          <div key={(r.teamId ?? r.playerId ?? i)} className="grid grid-cols-[22px_1fr_auto_auto] items-center gap-2.5 py-1.5 border-b border-border last:border-0">
+                            <span className="font-mono text-[11px] text-muted-2">{i + 1}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              {r.logo && <img src={r.logo} alt="" className="w-[18px] h-[18px] object-contain" />}
+                              <span className="text-[13px] font-semibold text-ink truncate">{r.teamName ?? r.playerName}</span>
+                            </div>
+                            {m.scope === 'team' ? <span className="font-mono text-[10px] text-muted-2">{r.matches_played ?? '-'} MP</span> : <span />}
+                            <span className="font-display text-base text-lime">{r.score.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -29,13 +29,16 @@ export default function MetricBuilder({ onSave }: Props) {
     finally { setSaving(false); }
   }
 
+  const fieldLabel = 'font-mono text-[10px] tracking-[0.1em] text-muted-2 uppercase mb-2 block';
+  const inputCls = 'w-full bg-panel-2 border border-border-2 text-ink rounded-[9px] px-3 py-2.5 text-sm outline-none focus:border-lime';
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Scope */}
       <div className="flex gap-2">
         {(['team', 'player'] as const).map(s => (
           <button key={s} onClick={() => { setScope(s); setFormula(''); }}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition capitalize ${scope === s ? 'bg-[#00d4aa] text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+            className={`px-4 py-2 rounded-chip text-sm font-bold transition capitalize ${scope === s ? 'bg-lime text-lime-ink' : 'bg-white/[0.04] text-muted hover:text-ink'}`}>
             {s}
           </button>
         ))}
@@ -43,25 +46,12 @@ export default function MetricBuilder({ onSave }: Props) {
 
       {/* Templates */}
       <div>
-        <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Templates</p>
-        <div className="flex flex-wrap gap-2">
+        <span className={fieldLabel}>Templates</span>
+        <div className="flex flex-wrap gap-1.5">
           {templates.map(t => (
             <button key={t.name} onClick={() => applyTemplate(t)}
-              className="px-3 py-1 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full hover:bg-blue-500/20 transition">
+              className="px-3 py-1.5 font-mono text-[11px] bg-white/[0.04] text-muted border border-border rounded-[7px] hover:text-lime hover:border-[rgba(200,242,58,0.35)] transition">
               {t.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Operators */}
-      <div>
-        <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Operators</p>
-        <div className="flex gap-2">
-          {OPERATORS.map(op => (
-            <button key={op} onClick={() => insertOp(op)}
-              className="w-9 h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-mono transition">
-              {op}
             </button>
           ))}
         </div>
@@ -69,39 +59,56 @@ export default function MetricBuilder({ onSave }: Props) {
 
       {/* Variables */}
       <div>
-        <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Variables — click to insert</p>
-        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+        <span className={fieldLabel}>Variables — tap to insert</span>
+        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto scrollbar-thin">
           {vars.map(v => (
             <button key={v.key} onClick={() => insertVar(v.key)}
-              className="px-3 py-1 text-xs bg-[#00d4aa]/10 text-[#00d4aa] border border-[#00d4aa]/20 rounded-full hover:bg-[#00d4aa]/20 transition">
+              className="px-2.5 py-1.5 font-mono text-[11px] bg-white/[0.04] text-muted border border-border rounded-[7px] hover:text-lime hover:border-[rgba(200,242,58,0.35)] transition">
               {v.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Formula preview */}
+      {/* Operators */}
       <div>
-        <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Formula</p>
+        <span className={fieldLabel}>Operators</span>
+        <div className="flex gap-1.5">
+          {OPERATORS.map(op => (
+            <button key={op} onClick={() => insertOp(op)}
+              className="w-[38px] h-[38px] bg-panel-2 border border-border rounded-chip text-ink font-mono text-sm font-bold hover:text-lime hover:border-lime transition">
+              {op}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Formula */}
+      <div>
+        <span className={fieldLabel}>Formula</span>
         <div className="flex gap-2">
           <input value={formula} onChange={e => setFormula(e.target.value)} placeholder="e.g. (goals_for * 2) + win_rate"
-            className="flex-1 bg-[#1a2535] border border-white/10 text-white font-mono text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00d4aa]" />
-          <button onClick={() => setFormula('')} className="px-3 py-2 text-xs bg-white/5 text-gray-400 rounded-lg hover:bg-white/10">Clear</button>
+            className="flex-1 bg-panel-2 border border-border-2 text-lime font-mono text-[13px] rounded-[9px] px-3 py-2.5 outline-none focus:border-lime" />
+          <button onClick={() => setFormula('')} className="px-3 py-2.5 font-mono text-[11px] bg-white/[0.04] text-muted rounded-[9px] hover:text-ink transition">Clear</button>
         </div>
       </div>
 
       {/* Name + Description */}
       <div className="grid grid-cols-2 gap-3">
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Metric name"
-          className="bg-[#1a2535] border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00d4aa]" />
-        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
-          className="bg-[#1a2535] border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00d4aa]" />
+        <div>
+          <span className={fieldLabel}>Name</span>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Attacking Threat" className={inputCls} />
+        </div>
+        <div>
+          <span className={fieldLabel}>Description</span>
+          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional" className={inputCls} />
+        </div>
       </div>
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-loss text-sm">{error}</p>}
 
       <button onClick={handleSave} disabled={saving || !name || !formula}
-        className="px-6 py-2 bg-[#00d4aa] hover:bg-[#00b899] text-black font-semibold rounded-lg transition disabled:opacity-50 text-sm">
+        className="w-full py-3.5 bg-lime text-lime-ink font-mono text-xs font-bold uppercase tracking-[0.06em] rounded-[9px] hover:brightness-110 transition disabled:opacity-50">
         {saving ? 'Saving…' : 'Save Metric'}
       </button>
     </div>

@@ -26,7 +26,7 @@ export default function LeagueSeasonSelector({
       <select
         value={selectedLeagueId}
         onChange={e => onLeagueChange(e.target.value)}
-        className="bg-[#1a2535] border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00d4aa]"
+        className="bg-panel-2 border border-border-2 text-ink rounded-chip px-3 py-2 text-sm font-semibold focus:outline-none focus:border-lime"
       >
         <option value="">All Leagues</option>
         {filtered.map(l => (
@@ -36,7 +36,7 @@ export default function LeagueSeasonSelector({
       <select
         value={selectedSeason}
         onChange={e => onSeasonChange(e.target.value)}
-        className="bg-[#1a2535] border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00d4aa]"
+        className="bg-panel-2 border border-border-2 text-ink rounded-chip px-3 py-2 text-sm font-semibold focus:outline-none focus:border-lime"
       >
         <option value="">All Seasons</option>
         {seasons.map(s => <option key={s} value={s}>{s}</option>)}

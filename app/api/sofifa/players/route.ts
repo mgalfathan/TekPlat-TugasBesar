@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getSofifaPlayers } from '@/lib/sofifa-dataset';
 
+// Served from the static EA FC26 CSV-derived dataset (no database).
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const teamId   = searchParams.get('teamId');
@@ -9,20 +10,12 @@ export async function GET(req: NextRequest) {
   const search   = searchParams.get('search') ?? '';
   const limit    = Math.min(Number(searchParams.get('limit') ?? '60'), 200);
 
-  const where: Record<string, unknown> = {};
-  if (teamId)   where.teamId = parseInt(teamId);
-  if (posGroup) where.posGroup = posGroup;
-  if (search)   where.name = { contains: search, mode: 'insensitive' };
-
-  if (leagueId && !teamId) {
-    where.team = { leagueId: parseInt(leagueId) };
-  }
-
-  const players = await prisma.sofifaPlayer.findMany({
-    where,
-    orderBy: { overallRating: 'desc' },
-    take: limit,
-    include: { team: { select: { name: true } } },
+  const players = getSofifaPlayers({
+    teamId: teamId ? parseInt(teamId) : undefined,
+    leagueId: leagueId ? parseInt(leagueId) : undefined,
+    posGroup: posGroup ?? undefined,
+    search,
+    limit,
   });
 
   return NextResponse.json({ players });

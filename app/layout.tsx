@@ -1,6 +1,28 @@
 import type { Metadata } from 'next';
+import { Anton, Archivo, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/Navbar';
+
+const anton = Anton({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-anton',
+  display: 'swap',
+});
+
+const archivo = Archivo({
+  weight: ['400', '500', '600', '700', '800', '900'],
+  subsets: ['latin'],
+  variable: '--font-archivo',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  weight: ['400', '500', '700'],
+  subsets: ['latin'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'The Gaffer — Football Data & Analytics Platform',
@@ -9,10 +31,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#0a0f1e] text-slate-100 min-h-screen">
+    <html lang="en" className={`dark ${anton.variable} ${archivo.variable} ${jetbrainsMono.variable}`}>
+      <body className="bg-bg text-ink min-h-screen font-sans antialiased">
         <Navbar />
-        <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
+        <main className="max-w-page mx-auto px-7 pt-9 pb-24">{children}</main>
       </body>
     </html>
   );

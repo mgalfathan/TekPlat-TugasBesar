@@ -3,17 +3,36 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0f1e;
-  --foreground: #f1f5f9;
+  --background: #0b0c08;
+  --foreground: #f4f5ec;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  /* subtle lime glow, top-right */
+  background-image: radial-gradient(120% 80% at 80% -10%, rgba(200, 242, 58, 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: #c8f23a;
+  color: #0b0c08;
 }
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #374151 transparent;
+  scrollbar-color: #2a2c1e transparent;
+}
+
+/* Entrance: translateY only (content stays visible), gated by reduced-motion */
+@keyframes gaffer-rise {
+  from { transform: translateY(7px); }
+  to { transform: none; }
+}
+.gaffer-screen {
+  animation: gaffer-rise 0.4s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gaffer-screen { animation: none; }
 }

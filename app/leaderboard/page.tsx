@@ -31,16 +31,34 @@ const SORTS: Array<{ key: SortKey; label: string }> = [
   { key: 'cleanSheets', label: 'Clean Sheets' },
 ];
 
+// deterministic club hue (the analytics API carries no brand colour)
+function hueOf(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return h;
+}
+
+function Crest({ team, size = 40 }: { team: { teamName: string; code: string | null; logo: string | null }; size?: number }) {
+  if (team.logo) return <img src={team.logo} alt="" className="object-contain flex-none" style={{ width: size, height: size }} />;
+  const code = team.code ?? team.teamName.slice(0, 3).toUpperCase();
+  const h = hueOf(code);
+  return (
+    <div
+      className="rounded-[9px] flex items-center justify-center flex-none shadow-[inset_0_0_0_1px_rgba(255,255,255,.14)]"
+      style={{ width: size, height: size, background: `linear-gradient(150deg, hsl(${h} 48% 44%), hsl(${h} 48% 28%))` }}
+    >
+      <span className="font-display text-white tracking-[0.5px] drop-shadow" style={{ fontSize: Math.round(size * 0.34) }}>{code}</span>
+    </div>
+  );
+}
+
 function FormDots({ form }: { form: Array<'W' | 'D' | 'L'> }) {
-  if (!form.length) return <span className="text-slate-600 text-xs">—</span>;
+  if (!form.length) return <span className="text-muted-2 text-xs">—</span>;
+  const tone = { W: 'bg-win/[0.16] text-win', D: 'bg-draw/[0.16] text-draw', L: 'bg-loss/[0.16] text-loss' };
   return (
     <div className="flex gap-1">
       {form.map((r, i) => (
-        <span key={i} className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-bold ${
-          r === 'W' ? 'bg-emerald-500/20 text-emerald-400' :
-          r === 'D' ? 'bg-slate-500/20 text-slate-400' :
-          'bg-red-500/20 text-red-400'
-        }`}>{r}</span>
+        <span key={i} className={`w-[21px] h-[21px] rounded-md text-[10px] font-mono font-extrabold flex items-center justify-center ${tone[r]}`}>{r}</span>
       ))}
     </div>
   );
@@ -108,46 +126,58 @@ export default function AnalyticsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="gaffer-screen space-y-7">
+      <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <h1 className="text-3xl font-black text-white mb-1">Team Analytics</h1>
-          <p className="text-slate-400">General statistics per team — filter, sort, and overlay your custom metrics</p>
+          <div className="flex items-center gap-2.5 font-mono text-xs font-bold tracking-[0.14em] text-lime uppercase mb-3.5">
+            <span className="bg-lime text-lime-ink px-1.5 py-px rounded">02</span>
+            <span>Team Analytics</span>
+          </div>
+          <h1 className="font-display uppercase text-ink leading-[0.9] tracking-[0.5px] text-[clamp(40px,6.4vw,82px)] mb-4">
+            Every club,<br />every metric.
+          </h1>
+          <p className="text-muted text-base leading-relaxed max-w-[620px] text-pretty">
+            Sort the league on any statistic, then overlay a custom formula to rank clubs your way.
+          </p>
         </div>
         <LeagueSeasonSelector leagues={leagues} selectedLeagueId={leagueId} selectedSeason={season} onLeagueChange={setLeagueId} onSeasonChange={setSeason} />
-      </div>
+      </header>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-500 text-xs uppercase tracking-wide">Custom Metric:</span>
+      <div className="flex flex-wrap gap-5 items-center">
+        <div className="flex items-center gap-2.5">
+          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-2">Custom Metric</span>
           <select
             value={metricId}
-            onChange={e => setMetricId(e.target.value)}
-            className="bg-[#1a2535] border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#00d4aa]"
+            onChange={e => {
+              setMetricId(e.target.value);
+              if (e.target.value && sortBy !== 'customScore') setSortBy('customScore');
+              if (!e.target.value && sortBy === 'customScore') setSortBy('points');
+            }}
+            className="bg-panel-2 border border-border-2 text-ink rounded-chip px-3 py-2 text-sm font-semibold focus:outline-none focus:border-lime"
           >
             <option value="">None</option>
             {metrics.map(m => <option key={m.id} value={String(m.id)}>{m.name}</option>)}
           </select>
-          {metricLoading && <span className="text-slate-500 text-xs">computing…</span>}
+          {metricLoading && <span className="font-mono text-[10px] text-muted-2">computing…</span>}
         </div>
-        <div className="flex flex-wrap gap-2 items-center text-xs">
-          <span className="text-slate-500 uppercase tracking-wide mr-1">Sort by:</span>
+        <div className="flex flex-wrap gap-[7px] items-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-2 mr-1">Sort by</span>
           {SORTS.map(s => (
             <button key={s.key} onClick={() => setSortBy(s.key)}
-              className={`px-3 py-1 rounded-full border transition ${
+              className={`px-3.5 py-[7px] rounded-pill text-[12.5px] font-semibold border transition ${
                 sortBy === s.key
-                  ? 'bg-[#00d4aa] text-black border-[#00d4aa]'
-                  : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                  ? 'bg-lime text-lime-ink border-lime'
+                  : 'bg-white/[0.04] text-muted border-border hover:text-ink hover:border-border-2'
               }`}>
               {s.label}
             </button>
           ))}
           {selectedMetric && (
             <button onClick={() => setSortBy('customScore')}
-              className={`px-3 py-1 rounded-full border transition ${
+              className={`px-3.5 py-[7px] rounded-pill text-[12.5px] font-semibold border transition ${
                 sortBy === 'customScore'
-                  ? 'bg-amber-500 text-black border-amber-500'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                  ? 'bg-lime text-lime-ink border-lime'
+                  : 'bg-[rgba(200,242,58,0.08)] text-lime border-[rgba(200,242,58,0.3)]'
               }`}>
               ★ {selectedMetric.name}
             </button>
@@ -158,103 +188,77 @@ export default function AnalyticsPage() {
       {loading ? <LoadingSpinner message="Loading team analytics..." /> :
        sorted.length === 0 ? <EmptyState title="No analytics yet" description="Sync data in Admin → Sync to populate team statistics." /> : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {sorted.map((t, i) => (
-            <div key={t.teamId} className="bg-[#111827] border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-2xl font-black text-slate-600 w-6 shrink-0">{i + 1}</span>
-                  {t.logo ? (
-                    <img src={t.logo} alt="" className="w-9 h-9 object-contain shrink-0" />
-                  ) : (
-                    <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">{t.code ?? '?'}</div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-white font-bold text-sm truncate">{t.teamName}</p>
-                    <p className="text-slate-500 text-xs truncate">{t.country ?? '—'}</p>
-                  </div>
+          {sorted.map((t, i) => {
+            const h = hueOf(t.code ?? t.teamName);
+            return (
+            <article key={t.teamId} className="relative overflow-hidden bg-panel border border-border rounded-card p-5 transition-all hover:border-border-2 hover:-translate-y-0.5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="font-display text-xl text-muted-2">{String(i + 1).padStart(2, '0')}</span>
+                <Crest team={t} size={40} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-ink font-extrabold text-[15px] truncate">{t.teamName}</p>
+                  <p className="font-mono text-[10px] text-muted-2 truncate mt-px">{t.country ?? '—'}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-2xl font-black text-[#00d4aa]">{t.points}</div>
-                  <div className="text-slate-500 text-[10px] uppercase tracking-wide">Points</div>
+                  <div className="font-display text-3xl leading-none text-lime">{t.points}</div>
+                  <div className="font-mono text-[9px] text-muted tracking-[0.1em] uppercase">PTS</div>
                 </div>
               </div>
 
               {selectedMetric && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-amber-400/70 text-[10px] uppercase tracking-wide">★ {selectedMetric.name}</div>
-                    <div className="text-amber-400 font-mono font-bold text-lg">
-                      {t.customScore != null ? t.customScore.toFixed(2) : '—'}
-                    </div>
+                <div className="bg-[rgba(200,242,58,0.07)] border border-[rgba(200,242,58,0.18)] rounded-[10px] px-3 py-2.5 mb-3.5 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-mono text-[9.5px] tracking-[0.08em] text-lime uppercase">★ {selectedMetric.name}</div>
+                    <div className="font-mono text-[10px] text-muted mt-0.5 truncate max-w-[160px]" title={selectedMetric.formula}>{selectedMetric.formula}</div>
                   </div>
-                  <div className="text-amber-400/40 text-[10px] font-mono max-w-[60%] text-right truncate" title={selectedMetric.formula}>
-                    {selectedMetric.formula}
+                  <div className="font-display text-2xl text-lime shrink-0">
+                    {t.customScore != null ? t.customScore.toFixed(2) : '—'}
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-4 gap-2 mb-4 text-center">
-                <div>
-                  <div className="text-slate-200 font-bold text-sm">{t.played}</div>
-                  <div className="text-slate-500 text-[10px] uppercase">MP</div>
-                </div>
-                <div>
-                  <div className="text-emerald-400 font-bold text-sm">{t.wins}</div>
-                  <div className="text-slate-500 text-[10px] uppercase">W</div>
-                </div>
-                <div>
-                  <div className="text-slate-300 font-bold text-sm">{t.draws}</div>
-                  <div className="text-slate-500 text-[10px] uppercase">D</div>
-                </div>
-                <div>
-                  <div className="text-red-400 font-bold text-sm">{t.losses}</div>
-                  <div className="text-slate-500 text-[10px] uppercase">L</div>
-                </div>
+              <div className="grid grid-cols-4 gap-1.5 mb-3.5 text-center">
+                <div><b className="font-display text-lg block text-ink">{t.played}</b><span className="font-mono text-[9px] text-muted-2 tracking-[0.08em]">MP</span></div>
+                <div><b className="font-display text-lg block text-win">{t.wins}</b><span className="font-mono text-[9px] text-muted-2 tracking-[0.08em]">W</span></div>
+                <div><b className="font-display text-lg block text-draw">{t.draws}</b><span className="font-mono text-[9px] text-muted-2 tracking-[0.08em]">D</span></div>
+                <div><b className="font-display text-lg block text-loss">{t.losses}</b><span className="font-mono text-[9px] text-muted-2 tracking-[0.08em]">L</span></div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Win Rate</div>
-                  <div className="text-slate-100 font-semibold">{t.winRate}%</div>
+              <div className="grid grid-cols-2 gap-1.5 mb-4">
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Win Rate</span>
+                  <b className="text-[13.5px] font-bold block mt-0.5 text-ink">{t.winRate}%</b>
                 </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Goal Diff</div>
-                  <div className={`font-semibold ${t.goalDifference > 0 ? 'text-emerald-400' : t.goalDifference < 0 ? 'text-red-400' : 'text-slate-300'}`}>
-                    {t.goalDifference > 0 ? '+' : ''}{t.goalDifference}
-                  </div>
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Goal Diff</span>
+                  <b className={`text-[13.5px] font-bold block mt-0.5 ${t.goalDifference > 0 ? 'text-win' : t.goalDifference < 0 ? 'text-loss' : 'text-ink'}`}>{t.goalDifference > 0 ? '+' : ''}{t.goalDifference}</b>
                 </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Goals (For / Against)</div>
-                  <div className="text-slate-100 font-semibold">{t.goalsFor} / {t.goalsAgainst}</div>
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Goals F / A</span>
+                  <b className="text-[13.5px] font-bold block mt-0.5 text-ink">{t.goalsFor} / {t.goalsAgainst}</b>
                 </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Avg per Match</div>
-                  <div className="text-slate-100 font-semibold">{t.goalsPerMatch} / {t.concededPerMatch}</div>
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Avg / Match</span>
+                  <b className="text-[13.5px] font-bold block mt-0.5 text-ink">{t.goalsPerMatch} / {t.concededPerMatch}</b>
                 </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Clean Sheets</div>
-                  <div className="text-emerald-400 font-semibold">{t.cleanSheets}</div>
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Clean Sheets</span>
+                  <b className="text-[13.5px] font-bold block mt-0.5 text-win">{t.cleanSheets}</b>
                 </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Failed to Score</div>
-                  <div className="text-red-400 font-semibold">{t.failedToScore}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Home Wins</div>
-                  <div className="text-slate-100 font-semibold">{t.homeWins}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
-                  <div className="text-slate-500 text-[10px] uppercase">Away Wins</div>
-                  <div className="text-slate-100 font-semibold">{t.awayWins}</div>
+                <div className="bg-white/[0.035] rounded-lg px-2.5 py-2">
+                  <span className="font-mono text-[9px] tracking-[0.06em] text-muted-2 block uppercase">Failed to Score</span>
+                  <b className="text-[13.5px] font-bold block mt-0.5 text-loss">{t.failedToScore}</b>
                 </div>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 text-[10px] uppercase tracking-wide">Last 5</span>
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted-2">Last 5</span>
                 <FormDots form={t.form} />
               </div>
-            </div>
-          ))}
+
+              <div className="absolute left-0 bottom-0 h-[3px] w-full opacity-85" style={{ background: `linear-gradient(90deg, hsl(${h} 55% 50%), transparent)` }} />
+            </article>
+          );})}
         </div>
       )}
     </div>
