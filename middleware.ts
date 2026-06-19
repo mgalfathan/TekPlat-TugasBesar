@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? 'sportlytics-dev-secret-only');
+const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? 'the-gaffer-dev-secret-only');
 
 async function verifyToken(token: string) {
   try {

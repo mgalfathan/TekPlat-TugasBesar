@@ -32,7 +32,7 @@ export default function LoginPage() {
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="bg-[#111827] border border-white/10 rounded-xl p-8 w-full max-w-sm">
         <h1 className="text-2xl font-bold text-white mb-2">Sign In</h1>
-        <p className="text-gray-400 text-sm mb-6">Welcome back to Sportlytics</p>
+        <p className="text-gray-400 text-sm mb-6">Welcome back to THE GAFFER</p>
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

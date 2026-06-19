@@ -6,7 +6,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 }
 
 const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'sportlytics-dev-secret-only'
+  process.env.JWT_SECRET ?? 'the-gaffer-dev-secret-only'
 );
 
 export interface JWTPayload {

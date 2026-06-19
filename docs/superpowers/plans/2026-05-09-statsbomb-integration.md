@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Integrate StatsBomb Open Data (competitions, matches, lineups, players, key events) into Sportlytics — adding 6 new Prisma models, a Players section, a Match Detail page, and updating all existing pages (dashboard, matches, results, admin/sync, navbar) to expose StatsBomb data.
+**Goal:** Integrate StatsBomb Open Data (competitions, matches, lineups, players, key events) into THE GAFFER — adding 6 new Prisma models, a Players section, a Match Detail page, and updating all existing pages (dashboard, matches, results, admin/sync, navbar) to expose StatsBomb data.
 
 **Architecture:** Fetch JSON from StatsBomb's GitHub raw URLs (no API key required) and upsert into 6 new SQLite models (SbCompetition, SbTeam, SbPlayer, SbMatch, SbLineupEntry, SbEvent). StatsBomb data is historical and coexists with football-data.org live data. Key events only (shots, substitutions, fouls, cards, goal assists) are stored to keep the database lean.
 

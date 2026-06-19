@@ -9,8 +9,8 @@ async function main() {
   // Users
   const adminHash = await bcrypt.hash('admin12345', 10);
   const userHash = await bcrypt.hash('user12345', 10);
-  await prisma.user.upsert({ where: { email: 'admin@sportlytics.local' }, create: { email: 'admin@sportlytics.local', name: 'Admin', password: adminHash, role: 'ADMIN' }, update: {} });
-  await prisma.user.upsert({ where: { email: 'user@sportlytics.local' }, create: { email: 'user@sportlytics.local', name: 'Demo User', password: userHash, role: 'USER' }, update: {} });
+  await prisma.user.upsert({ where: { email: 'admin@the-gaffer.local' }, create: { email: 'admin@the-gaffer.local', name: 'Admin', password: adminHash, role: 'ADMIN' }, update: {} });
+  await prisma.user.upsert({ where: { email: 'user@the-gaffer.local' }, create: { email: 'user@the-gaffer.local', name: 'Demo User', password: userHash, role: 'USER' }, update: {} });
 
   // Custom metric templates
   await prisma.customMetric.upsert({ where: { id: 1 }, create: { id: 1, name: 'Attacking Strength', scope: 'team', formula: '(goals_for_per_match * 3) + (total_shots * 0.1) + (expected_goals * 2)', description: 'Measures offensive output' }, update: {} });
