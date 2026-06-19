@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
@@ -25,11 +26,11 @@ export default function PlayersPage() {
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
 
-  const fetchPlayers = useCallback((s: string, c: string) => {
+  const fetchPlayers = useCallback((name: string, nationality: string) => {
     setLoading(true);
     const params = new URLSearchParams({ limit: '100' });
-    if (s) params.set('search', s);
-    if (c) params.set('country', c);
+    if (name) params.set('search', name);
+    if (nationality) params.set('country', nationality);
     fetch(`/api/players?${params}`)
       .then(r => r.json())
       .then((d: { players?: Player[]; total?: number }) => {
@@ -40,98 +41,139 @@ export default function PlayersPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetchPlayers('', ''); }, [fetchPlayers]);
+  useEffect(() => {
+    fetchPlayers('', '');
+  }, [fetchPlayers]);
 
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); fetchPlayers(search, country); };
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    fetchPlayers(search.trim(), country.trim());
+  }
+
+  function clearFilters() {
+    setSearch('');
+    setCountry('');
+    fetchPlayers('', '');
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-white mb-1">Players</h1>
-          <p className="text-slate-400">{total} players in database</p>
+    <div className="gaffer-screen space-y-7">
+      <header className="border-b border-border pb-6">
+        <div className="mb-3 flex items-center gap-2.5 font-mono text-xs font-bold uppercase tracking-[0.14em] text-lime">
+          <span className="rounded bg-lime px-1.5 py-px text-lime-ink">08</span>
+          Player database
         </div>
-        <form onSubmit={handleSearch} className="flex gap-2 flex-wrap">
+        <h1 className="font-display text-[clamp(44px,7vw,78px)] uppercase leading-[0.9] tracking-[0.5px] text-ink">
+          Players.
+        </h1>
+        <p className="mt-3 text-sm text-muted">{total} player profiles available.</p>
+      </header>
+
+      <form onSubmit={handleSearch} className="grid gap-3 border border-border bg-panel p-4 rounded-card md:grid-cols-[1fr_240px_auto_auto] md:items-end">
+        <div>
+          <label htmlFor="player-search" className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">
+            Player name
+          </label>
           <input
-            type="text" placeholder="Search name..." value={search}
+            id="player-search"
+            type="search"
+            placeholder="Search players"
+            value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-[#111827] border border-gray-700 rounded-lg px-4 py-2 text-slate-100 text-sm focus:outline-none focus:border-[#00d4aa] w-48"
+            className="h-11 w-full rounded-chip border border-border-2 bg-bg px-4 text-sm text-ink outline-none transition-colors placeholder:text-muted-2 focus:border-lime focus:ring-1 focus:ring-lime/20"
           />
+        </div>
+        <div>
+          <label htmlFor="nationality" className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">
+            Nationality
+          </label>
           <input
-            type="text" placeholder="Nationality..." value={country}
+            id="nationality"
+            type="search"
+            placeholder="e.g. England"
+            value={country}
             onChange={e => setCountry(e.target.value)}
-            className="bg-[#111827] border border-gray-700 rounded-lg px-4 py-2 text-slate-100 text-sm focus:outline-none focus:border-[#00d4aa] w-36"
+            className="h-11 w-full rounded-chip border border-border-2 bg-bg px-4 text-sm text-ink outline-none transition-colors placeholder:text-muted-2 focus:border-lime focus:ring-1 focus:ring-lime/20"
           />
-          <button type="submit" className="bg-[#00d4aa] text-[#0a0f1e] font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#00d4aa]/90 transition-colors">
-            Search
-          </button>
-        </form>
-      </div>
+        </div>
+        <button type="submit" className="h-11 rounded-chip bg-lime px-5 font-mono text-xs font-bold uppercase tracking-[0.06em] text-lime-ink transition hover:brightness-110">
+          Search
+        </button>
+        <button type="button" onClick={clearFilters} className="h-11 rounded-chip border border-border-2 px-4 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted transition-colors hover:border-lime hover:text-lime">
+          Reset
+        </button>
+      </form>
 
       {loading ? (
         <LoadingSpinner message="Loading players..." />
       ) : players.length === 0 ? (
         <EmptyState
           title="No players found"
-          description="Sync players in Admin → Sync (Type: players, choose a League ID + Season). Players sync uses 1 API request per team, so ~20 reqs per league."
+          description="Sync players in Admin > Sync, or adjust the current filters."
         />
       ) : (
-        <div className="bg-[#111827] border border-gray-800 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800 text-slate-400 text-xs uppercase">
-                <th className="text-left px-4 py-3">Player</th>
-                <th className="text-left px-4 py-3">Team</th>
-                <th className="text-left px-4 py-3">Nationality</th>
-                <th className="text-center px-4 py-3">Age</th>
-                <th className="text-center px-4 py-3">Status</th>
-                <th className="text-right px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map(p => (
-                <tr key={p.id} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {p.photo ? (
-                        <img src={p.photo} alt="" className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-slate-400 font-bold">
-                          {p.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-slate-200 font-medium">{p.name}</p>
-                        {p.firstname && p.lastname && <p className="text-slate-500 text-xs">{p.firstname} {p.lastname}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {p.team ? (
-                      <div className="flex items-center gap-2">
-                        {p.team.logo && <img src={p.team.logo} alt="" className="w-4 h-4 object-contain" />}
-                        <span className="text-slate-300 text-xs">{p.team.name}</span>
-                      </div>
-                    ) : <span className="text-slate-600 text-xs">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{p.nationality ?? '—'}</td>
-                  <td className="px-4 py-3 text-center text-slate-300 text-xs">{p.age ?? '—'}</td>
-                  <td className="px-4 py-3 text-center">
-                    {p.injured ? (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Injured</span>
-                    ) : (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Fit</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/players/${p.id}`} className="text-xs text-[#00d4aa] hover:underline">
-                      Profile →
-                    </Link>
-                  </td>
+        <div className="overflow-hidden border border-border bg-panel rounded-card">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-panel-2 font-mono text-[9px] uppercase tracking-[0.1em] text-muted">
+                  <th className="px-4 py-3 text-left">Player</th>
+                  <th className="px-4 py-3 text-left">Club</th>
+                  <th className="px-4 py-3 text-left">Nationality</th>
+                  <th className="px-4 py-3 text-center">Age</th>
+                  <th className="px-4 py-3 text-center">Availability</th>
+                  <th className="px-4 py-3 text-right">Profile</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {players.map(player => (
+                  <tr key={player.id} className="border-b border-border last:border-0 transition-colors hover:bg-white/[0.025]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-chip border border-border bg-bg">
+                          {player.photo ? (
+                            <img src={player.photo} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="font-display text-[11px] text-muted">
+                              {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-ink">{player.name}</p>
+                          {player.firstname && player.lastname && (
+                            <p className="mt-0.5 text-[11px] text-muted-2">{player.firstname} {player.lastname}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {player.team ? (
+                        <Link href={`/teams/${player.team.id}`} className="inline-flex items-center gap-2 text-xs text-muted transition-colors hover:text-lime">
+                          {player.team.logo && <img src={player.team.logo} alt="" className="h-5 w-5 object-contain" />}
+                          {player.team.name}
+                        </Link>
+                      ) : <span className="text-xs text-muted-2">-</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted">{player.nationality ?? '-'}</td>
+                    <td className="px-4 py-3 text-center font-mono text-xs text-ink">{player.age ?? '-'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex rounded px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] ${
+                        player.injured ? 'bg-loss/10 text-loss' : 'bg-win/10 text-win'
+                      }`}>
+                        {player.injured ? 'Injured' : 'Available'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link href={`/players/${player.id}`} className="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted transition-colors hover:text-lime">
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

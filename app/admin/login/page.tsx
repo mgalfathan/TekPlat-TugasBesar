@@ -1,6 +1,8 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import PasswordInput from '@/components/PasswordInput';
 
 export default function AdminLoginPage() {
@@ -21,32 +23,55 @@ export default function AdminLoginPage() {
     });
     const data = await res.json();
     setLoading(false);
-    if (!res.ok) { setError(data.error ?? 'Login failed'); return; }
-    if (data.role !== 'ADMIN') { setError('Not an admin account'); return; }
+    if (!res.ok) {
+      setError(data.error ?? 'Login failed');
+      return;
+    }
+    if (data.role !== 'ADMIN') {
+      setError('This account does not have admin access.');
+      return;
+    }
     router.push('/admin/sync');
+    router.refresh();
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0f1e]">
-      <div className="bg-[#111827] border border-white/10 rounded-xl p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
-        <p className="text-gray-400 text-sm mb-6">The Gaffer administration</p>
-        {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="Email" required
-            className="w-full bg-[#1a2535] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d4aa]"
-          />
-          <PasswordInput value={password} onChange={setPassword} placeholder="Password" required />
-          <button
-            type="submit" disabled={loading}
-            className="w-full bg-[#00d4aa] hover:bg-[#00b899] text-black font-semibold py-2 rounded-lg transition disabled:opacity-50"
-          >
-            {loading ? 'Signing in…' : 'Sign In'}
+    <div className="gaffer-screen flex min-h-[calc(100vh-164px)] items-center justify-center py-8">
+      <section className="w-full max-w-md border border-border bg-panel p-7 rounded-card sm:p-10">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-lime">Restricted access</p>
+        <h1 className="mt-3 font-display text-5xl uppercase leading-none tracking-[0.5px] text-ink">Admin login.</h1>
+        <p className="mt-3 text-sm text-muted">Authenticate with an administrator account.</p>
+
+        {error && <div role="alert" className="mt-6 rounded-chip border border-loss/25 bg-loss/[0.06] px-4 py-3 text-sm text-loss">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+          <div>
+            <label htmlFor="admin-email" className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Email address</label>
+            <input
+              id="admin-email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              autoComplete="email"
+              placeholder="admin@example.com"
+              required
+              className="h-12 w-full rounded-chip border border-border-2 bg-bg px-4 text-sm text-ink outline-none placeholder:text-muted-2 focus:border-lime focus:ring-1 focus:ring-lime/20"
+            />
+          </div>
+          <div>
+            <label htmlFor="admin-password" className="mb-2 block font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Password</label>
+            <PasswordInput id="admin-password" name="password" autoComplete="current-password" value={password} onChange={setPassword} required />
+          </div>
+          <button type="submit" disabled={loading} className="h-12 w-full rounded-chip bg-lime font-mono text-xs font-bold uppercase tracking-[0.06em] text-lime-ink hover:brightness-110 disabled:opacity-50">
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-      </div>
+
+        <Link href="/login" className="mt-6 block text-center font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted hover:text-lime">
+          Standard login
+        </Link>
+      </section>
     </div>
   );
 }

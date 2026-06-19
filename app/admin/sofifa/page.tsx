@@ -1,19 +1,25 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const LEAGUES = [
-  { id: 13, name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { id: 53, name: 'La Liga',        flag: '🇪🇸' },
-  { id: 19, name: 'Bundesliga',     flag: '🇩🇪' },
-  { id: 31, name: 'Serie A',        flag: '🇮🇹' },
-  { id: 16, name: 'Ligue 1',        flag: '🇫🇷' },
+  { id: 13, name: 'Premier League', code: 'ENG' },
+  { id: 53, name: 'La Liga', code: 'ESP' },
+  { id: 19, name: 'Bundesliga', code: 'GER' },
+  { id: 31, name: 'Serie A', code: 'ITA' },
+  { id: 16, name: 'Ligue 1', code: 'FRA' },
 ];
 
 interface SyncLog {
-  id: number; leagueName: string | null; status: string;
-  teamsCount: number; playersCount: number;
-  startedAt: string; finishedAt: string | null; errorMsg: string | null;
+  id: number;
+  leagueName: string | null;
+  status: string;
+  teamsCount: number;
+  playersCount: number;
+  startedAt: string;
+  finishedAt: string | null;
+  errorMsg: string | null;
 }
 
 export default function SofifaSyncPage() {
@@ -26,15 +32,17 @@ export default function SofifaSyncPage() {
   const [importErr, setImportErr] = useState('');
 
   const fetchLogs = useCallback(async () => {
-    const d = await fetch('/api/admin/sofifa/sync').then(r => r.json());
-    setLogs(d.logs ?? []);
+    const data = await fetch('/api/admin/sofifa/sync').then(r => r.json());
+    setLogs(data.logs ?? []);
   }, []);
 
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   async function runSync() {
     setLoading(true);
-    setMsg('Sync dimulai — berjalan di background. Refresh tabel setelah beberapa menit.');
+    setMsg('Sync started in the background. Refresh the log after a few minutes.');
     await fetch('/api/admin/sofifa/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,9 +54,11 @@ export default function SofifaSyncPage() {
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file
+    e.target.value = '';
     if (!file) return;
-    setImporting(true); setImportMsg(''); setImportErr('');
+    setImporting(true);
+    setImportMsg('');
+    setImportErr('');
     try {
       const text = await file.text();
       const res = await fetch('/api/admin/sofifa/import', {
@@ -56,127 +66,128 @@ export default function SofifaSyncPage() {
         headers: { 'Content-Type': 'text/csv' },
         body: text,
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? 'Import failed');
-      setImportMsg(`✓ Import selesai: ${d.teamsImported} tim · ${d.playersImported} pemain (liga ${d.leagueIds.join(', ')}).`);
-    } catch (err) {
-      setImportErr(err instanceof Error ? err.message : String(err));
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Import failed');
+      setImportMsg(`Import complete: ${data.teamsImported} teams and ${data.playersImported} players.`);
+    } catch (error) {
+      setImportErr(error instanceof Error ? error.message : String(error));
     } finally {
       setImporting(false);
     }
   }
 
-  const statusColor = (s: string) =>
-    s === 'done' ? 'text-[#00d4aa]' : s === 'error' ? 'text-red-400' : 'text-yellow-400';
+  function statusColor(status: string) {
+    if (status === 'done') return 'text-win';
+    if (status === 'error') return 'text-loss';
+    return 'text-amber-400';
+  }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="gaffer-screen mx-auto max-w-3xl space-y-6">
+      <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-2xl font-bold text-white">SoFIFA Sync</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Coba ambil rating live dari SoFIFA; jika IP diblokir, otomatis pakai data bawaan top-5 liga.
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-lime">Player ratings</p>
+          <h1 className="mt-3 font-display text-[clamp(42px,6vw,72px)] uppercase leading-[0.9] tracking-[0.5px] text-ink">
+            SoFIFA sync.
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+            Fetch live ratings when available, with bundled top-five league data as a fallback.
           </p>
         </div>
-        <Link href="/admin/sync" className="text-xs text-gray-500 hover:text-gray-300 transition">
-          ← Admin Sync
+        <Link
+          href="/admin/sync"
+          className="w-fit rounded-chip border border-border-2 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted hover:border-lime hover:text-lime"
+        >
+          Back to sync
         </Link>
-      </div>
+      </header>
 
-      <div className="bg-[#111827] border border-white/5 rounded-xl p-5 mb-6">
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-3 font-bold">Pilih liga</p>
-        <div className="grid grid-cols-3 gap-2 mb-4">
+      <section className="border border-border bg-panel p-5 rounded-card">
+        <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">League scope</p>
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <button
             onClick={() => setSelectedLeague(null)}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition
-              ${selectedLeague === null
-                ? 'bg-[#00d4aa]/20 border-[#00d4aa] text-[#00d4aa]'
-                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}>
-            🌍 Semua liga
+            className={`rounded-chip border px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.04em] transition ${
+              selectedLeague === null
+                ? 'border-lime bg-lime/10 text-lime'
+                : 'border-border-2 bg-bg text-muted hover:border-lime hover:text-lime'
+            }`}
+          >
+            All leagues
           </button>
-          {LEAGUES.map(l => (
-            <button key={l.id}
-              onClick={() => setSelectedLeague(l.id)}
-              className={`px-3 py-2 rounded-lg text-sm font-semibold border transition
-                ${selectedLeague === l.id
-                  ? 'bg-[#00d4aa]/20 border-[#00d4aa] text-[#00d4aa]'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'}`}>
-              {l.flag} {l.name}
+          {LEAGUES.map(league => (
+            <button
+              key={league.id}
+              onClick={() => setSelectedLeague(league.id)}
+              className={`rounded-chip border px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.04em] transition ${
+                selectedLeague === league.id
+                  ? 'border-lime bg-lime/10 text-lime'
+                  : 'border-border-2 bg-bg text-muted hover:border-lime hover:text-lime'
+              }`}
+            >
+              {league.code} / {league.name}
             </button>
           ))}
         </div>
 
-        <div className="bg-yellow-900/20 border border-yellow-500/20 rounded-lg p-3 mb-4">
-          <p className="text-yellow-400 text-xs">
-            ℹ SoFIFA membatasi 60 request/menit (429) & memblokir IP datacenter via Cloudflare (403).
-            Sync mencoba API live dulu; bila gagal otomatis fallback ke rating bawaan. Catatan: di
-            Cloudflare Workers kemungkinan besar selalu fallback karena IP-nya datacenter.
+        <div className="mb-4 rounded-chip border border-amber-500/20 bg-amber-500/[0.04] p-3">
+          <p className="text-xs leading-relaxed text-amber-400">
+            SoFIFA may rate-limit requests or block datacenter IPs. The sync automatically falls back to bundled ratings.
           </p>
         </div>
 
-        <button onClick={runSync} disabled={loading}
-          className="w-full py-2.5 bg-[#00d4aa] hover:bg-[#00b899] text-black
-            font-bold rounded-lg transition disabled:opacity-50 text-sm">
-          {loading ? 'Memulai sync…' : `▶ Sync ${selectedLeague
-            ? LEAGUES.find(l => l.id === selectedLeague)?.name
-            : 'semua liga'}`}
+        <button
+          onClick={runSync}
+          disabled={loading}
+          className="h-11 w-full rounded-chip bg-lime font-mono text-xs font-bold uppercase tracking-[0.06em] text-lime-ink hover:brightness-110 disabled:opacity-50"
+        >
+          {loading ? 'Starting sync...' : `Sync ${selectedLeague ? LEAGUES.find(l => l.id === selectedLeague)?.name : 'all leagues'}`}
         </button>
+        {msg && <p className="mt-3 text-sm text-win">{msg}</p>}
+      </section>
 
-        {msg && <p className="text-[#00d4aa] text-sm mt-3">{msg}</p>}
-      </div>
-
-      {/* CSV import — EA FC / FIFA dataset */}
-      <div className="bg-[#111827] border border-white/5 rounded-xl p-5 mb-6">
-        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 font-bold">Import EA FC / FIFA CSV</p>
-        <p className="text-gray-500 text-sm mb-3">
-          Upload dataset pemain EA FC / FIFA (mis. <code className="text-gray-400">players_24.csv</code> dari Kaggle).
-          Hanya top-5 liga (league_id 13/53/19/31/16) yang diimpor; rating tim diturunkan dari skuad.
-          Import menggantikan data liga yang ada di file.
+      <section className="border border-border bg-panel p-5 rounded-card">
+        <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">EA FC / FIFA CSV import</p>
+        <p className="mb-4 text-sm leading-relaxed text-muted">
+          Upload a player dataset such as <code className="font-mono text-ink">players_24.csv</code>.
+          Only the supported top-five leagues are imported, replacing their existing rating data.
         </p>
-        <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition cursor-pointer
-          ${importing ? 'bg-white/10 text-gray-400 cursor-wait' : 'bg-[#00d4aa] hover:bg-[#00b899] text-black'}`}>
-          {importing ? 'Mengimpor…' : '⬆ Pilih file CSV'}
+        <label className={`inline-flex h-11 cursor-pointer items-center rounded-chip px-4 font-mono text-xs font-bold uppercase tracking-[0.06em] ${
+          importing ? 'cursor-wait bg-white/[0.05] text-muted' : 'bg-lime text-lime-ink hover:brightness-110'
+        }`}>
+          {importing ? 'Importing...' : 'Select CSV file'}
           <input type="file" accept=".csv,text/csv" onChange={handleImport} disabled={importing} className="hidden" />
         </label>
-        {importMsg && <p className="text-[#00d4aa] text-sm mt-3">{importMsg}</p>}
-        {importErr && <p className="text-red-400 text-sm mt-3">{importErr}</p>}
-      </div>
+        {importMsg && <p className="mt-3 text-sm text-win">{importMsg}</p>}
+        {importErr && <p className="mt-3 text-sm text-loss">{importErr}</p>}
+      </section>
 
-      <div className="bg-[#111827] border border-white/5 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-bold">Riwayat sync</p>
-          <button onClick={fetchLogs} className="text-xs text-gray-500 hover:text-gray-300">
-            ↻ Refresh
+      <section className="border border-border bg-panel p-5 rounded-card">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Sync history</p>
+          <button onClick={fetchLogs} className="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted hover:text-lime">
+            Refresh
           </button>
         </div>
-        {logs.length === 0
-          ? <p className="text-gray-600 text-sm">Belum ada sync.</p>
-          : (
-            <div className="space-y-2">
-              {logs.map(log => (
-                <div key={log.id} className="flex items-center justify-between
-                  bg-white/[0.03] border border-white/5 rounded-lg px-4 py-2.5 text-sm">
-                  <div>
-                    <span className="text-white font-medium">{log.leagueName ?? 'Unknown'}</span>
-                    {log.errorMsg && (
-                      <p className="text-red-400 text-xs mt-0.5">{log.errorMsg}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className={`font-semibold ${statusColor(log.status)}`}>
-                      {log.status}
-                    </span>
-                    {log.status === 'done' && (
-                      <p className="text-gray-500 text-xs">
-                        {log.teamsCount} tim · {log.playersCount} pemain
-                      </p>
-                    )}
-                  </div>
+        {logs.length === 0 ? (
+          <p className="text-sm text-muted">No sync operations recorded.</p>
+        ) : (
+          <div className="space-y-2">
+            {logs.map(log => (
+              <div key={log.id} className="flex items-center justify-between gap-4 rounded-chip border border-border bg-bg px-4 py-3 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-ink">{log.leagueName ?? 'Unknown league'}</p>
+                  {log.errorMsg && <p className="mt-1 text-xs text-loss">{log.errorMsg}</p>}
                 </div>
-              ))}
-            </div>
-          )}
-      </div>
+                <div className="shrink-0 text-right">
+                  <span className={`font-mono text-[10px] font-bold uppercase ${statusColor(log.status)}`}>{log.status}</span>
+                  {log.status === 'done' && <p className="mt-1 text-[10px] text-muted">{log.teamsCount} teams / {log.playersCount} players</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

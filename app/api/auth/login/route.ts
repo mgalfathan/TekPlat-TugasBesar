@@ -6,6 +6,11 @@ import { signToken } from '@/lib/auth';
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
+
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !await bcrypt.compare(password, user.password)) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -20,7 +25,8 @@ export async function POST(req: NextRequest) {
       path: '/',
     });
     return res;
-  } catch {
+  } catch (error) {
+    console.error('Login failed:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

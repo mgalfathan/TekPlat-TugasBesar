@@ -1,8 +1,24 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
-interface Health { totalCountries: number; totalLeagues: number; totalSeasons: number; totalTeams: number; totalPlayers: number; totalMatches: number; totalStandings: number; lastSync?: { provider: string; syncType: string; status: string; startedAt: string } | null; staleDataWarnings: string[]; providerStatus: { apiFootball: boolean; footballData: boolean } }
+interface Health {
+  totalCountries: number; totalLeagues: number; totalSeasons: number; totalTeams: number;
+  totalPlayers: number; totalMatches: number; totalStandings: number;
+  lastSync?: { provider: string; syncType: string; status: string; startedAt: string } | null;
+  staleDataWarnings: string[];
+  providerStatus: { apiFootball: boolean; footballData: boolean };
+}
+
+function Status({ active, activeLabel = 'Configured', inactiveLabel = 'Missing' }: { active: boolean; activeLabel?: string; inactiveLabel?: string }) {
+  return (
+    <span className={`rounded px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] ${active ? 'bg-win/10 text-win' : 'bg-loss/10 text-loss'}`}>
+      {active ? activeLabel : inactiveLabel}
+    </span>
+  );
+}
 
 export default function DataHealthPage() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -12,71 +28,74 @@ export default function DataHealthPage() {
     fetch('/api/admin/data-health').then(r => r.json()).then(setHealth).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-8 text-gray-400 animate-pulse">Loading…</div>;
-  if (!health) return null;
+  if (loading) return <LoadingSpinner message="Checking data health..." />;
+  if (!health) return <div className="py-20 text-center text-loss">Unable to load data health.</div>;
 
   const stats = [
-    { label: 'Countries', value: health.totalCountries },
-    { label: 'Leagues', value: health.totalLeagues },
-    { label: 'Seasons', value: health.totalSeasons },
-    { label: 'Teams', value: health.totalTeams },
-    { label: 'Players', value: health.totalPlayers },
-    { label: 'Matches', value: health.totalMatches },
-    { label: 'Standings', value: health.totalStandings },
-  ];
+    ['Countries', health.totalCountries], ['Leagues', health.totalLeagues],
+    ['Seasons', health.totalSeasons], ['Teams', health.totalTeams],
+    ['Players', health.totalPlayers], ['Matches', health.totalMatches],
+    ['Standings', health.totalStandings],
+  ] as const;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Data Health</h1>
-        <Link href="/admin/sync" className="px-3 py-1.5 text-xs bg-[#00d4aa]/10 text-[#00d4aa] rounded-lg hover:bg-[#00d4aa]/20 transition">← Back to Sync</Link>
-      </div>
+    <div className="gaffer-screen space-y-6">
+      <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
+        <div>
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-lime">Admin diagnostics</p>
+          <h1 className="mt-3 font-display text-[clamp(42px,6vw,72px)] uppercase leading-[0.9] tracking-[0.5px] text-ink">Data health.</h1>
+          <p className="mt-3 text-sm text-muted">Coverage, provider configuration, and latest synchronization status.</p>
+        </div>
+        <Link href="/admin/sync" className="w-fit rounded-chip border border-border-2 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted hover:border-lime hover:text-lime">
+          Back to sync
+        </Link>
+      </header>
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {stats.map(s => (
-          <div key={s.label} className="bg-[#111827] border border-white/5 rounded-xl p-4 text-center">
-            <div className={`text-2xl font-bold ${s.value > 0 ? 'text-[#00d4aa]' : 'text-gray-600'}`}>{s.value}</div>
-            <div className="text-gray-500 text-xs mt-1">{s.label}</div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        {stats.map(([label, value]) => (
+          <div key={label} className="border border-border bg-panel p-4 rounded-card">
+            <div className={`font-display text-3xl ${value > 0 ? 'text-lime' : 'text-muted-2'}`}>{value}</div>
+            <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.08em] text-muted">{label}</div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Provider Status</p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">API-Football</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${health.providerStatus.apiFootball ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                {health.providerStatus.apiFootball ? 'Key set' : 'No key'}
-              </span>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="border border-border bg-panel p-5 rounded-card">
+          <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Provider status</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <span className="text-sm font-semibold text-ink">API-Football</span>
+              <Status active={health.providerStatus.apiFootball} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">football-data.org</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${health.providerStatus.footballData ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                {health.providerStatus.footballData ? 'Key set' : 'No key'}
-              </span>
+              <span className="text-sm font-semibold text-ink">football-data.org</span>
+              <Status active={health.providerStatus.footballData} />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Last Sync</p>
+        <section className="border border-border bg-panel p-5 rounded-card">
+          <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Latest sync</p>
           {health.lastSync ? (
-            <div className="space-y-1 text-sm">
-              <p className="text-white">{health.lastSync.provider} — {health.lastSync.syncType}</p>
-              <p className="text-gray-500 text-xs">{new Date(health.lastSync.startedAt).toLocaleString()}</p>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${health.lastSync.status === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{health.lastSync.status}</span>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold text-ink">{health.lastSync.provider} / {health.lastSync.syncType}</p>
+                <p className="mt-1 font-mono text-[10px] text-muted">{new Date(health.lastSync.startedAt).toLocaleString()}</p>
+              </div>
+              <Status active={health.lastSync.status === 'success'} activeLabel="Success" inactiveLabel={health.lastSync.status} />
             </div>
-          ) : <p className="text-gray-500 text-sm">No syncs yet</p>}
-        </div>
+          ) : <p className="text-sm text-muted">No sync operations recorded.</p>}
+        </section>
       </div>
 
       {health.staleDataWarnings.length > 0 && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <p className="text-yellow-400 font-semibold text-sm mb-2">⚠️ Warnings</p>
-          {health.staleDataWarnings.map((w, i) => <p key={i} className="text-yellow-300/80 text-sm">{w}</p>)}
-        </div>
+        <section className="border border-amber-500/20 bg-amber-500/[0.04] p-5 rounded-card">
+          <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-amber-400">Warnings</p>
+          <div className="space-y-2 text-sm text-muted">
+            {health.staleDataWarnings.map((warning, index) => <p key={index}>{warning}</p>)}
+          </div>
+        </section>
       )}
     </div>
   );

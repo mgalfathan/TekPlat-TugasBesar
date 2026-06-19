@@ -291,7 +291,6 @@ export async function importEafcCsv(text: string): Promise<EafcImportResult> {
         midfieldRating: t.midfieldRating, defenseRating: t.defenseRating,
         latestRoster: null, logoUrl: null,
       })),
-      skipDuplicates: true,
     }),
   );
 
@@ -303,7 +302,6 @@ export async function importEafcCsv(text: string): Promise<EafcImportResult> {
         overallRating: p.overall, potential: p.potential, age: p.age,
         nationality: p.nationality, photoUrl: p.photo,
       })),
-      skipDuplicates: true,
     }),
   );
 

@@ -7,12 +7,12 @@ const UPCOMING = ['NS', 'TBD', 'SCHEDULED', 'TIMED'];
 export default function StatusBadge({ status, elapsed }: Props) {
   const s = status?.toUpperCase() ?? 'NS';
   if (LIVE.includes(s)) return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-semibold">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+    <span className="inline-flex items-center gap-1.5 rounded bg-loss/10 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-loss">
+      <span className="h-1.5 w-1.5 rounded-full bg-loss animate-pulse" />
       {elapsed ? `${elapsed}'` : 'LIVE'}
     </span>
   );
-  if (FINISHED.includes(s)) return <span className="px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400 text-xs font-semibold">FT</span>;
-  if (UPCOMING.includes(s)) return <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Upcoming</span>;
-  return <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold">{s}</span>;
+  if (FINISHED.includes(s)) return <span className="rounded border border-border bg-white/[0.04] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-muted">FT</span>;
+  if (UPCOMING.includes(s)) return <span className="rounded bg-chart-blue/10 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-chart-blue">Upcoming</span>;
+  return <span className="rounded bg-amber-500/10 px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-amber-400">{s}</span>;
 }

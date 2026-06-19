@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -15,14 +16,21 @@ interface Player {
   weight: string | null;
   photo: string | null;
   injured: boolean;
-  team: { id: number; name: string; logo: string | null; code: string | null; country: string | null; venueName: string | null } | null;
+  team: {
+    id: number;
+    name: string;
+    logo: string | null;
+    code: string | null;
+    country: string | null;
+    venueName: string | null;
+  } | null;
 }
 
 function Field({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="bg-white/5 rounded-lg px-3 py-2">
-      <div className="text-slate-500 text-[10px] uppercase tracking-wide">{label}</div>
-      <div className="text-slate-100 text-sm font-medium">{value ?? '—'}</div>
+    <div className="border-l border-border pl-4">
+      <div className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-muted-2">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-ink">{value ?? '-'}</div>
     </div>
   );
 }
@@ -42,72 +50,97 @@ export default function PlayerPage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
   if (loading) return <LoadingSpinner message="Loading player profile..." />;
-  if (!player) return <div className="text-center py-20 text-red-400">Player not found.</div>;
+  if (!player) return <div className="py-20 text-center text-loss">Player not found.</div>;
 
   return (
-    <div className="space-y-6">
-      <Link href="/players" className="text-sm text-slate-500 hover:text-[#00d4aa] inline-block">
-        ← Players
+    <div className="gaffer-screen space-y-6">
+      <Link
+        href="/players"
+        className="inline-flex font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-muted transition-colors hover:text-lime"
+      >
+        Back to players
       </Link>
 
-      <div className="bg-[#111827] border border-gray-800 rounded-xl p-6">
-        <div className="flex items-center gap-5">
-          {player.photo ? (
-            <img src={player.photo} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-[#00d4aa]/30" />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center text-2xl text-slate-400 font-bold">
-              {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-black text-white">{player.name}</h1>
-            {player.firstname && player.lastname && (
-              <p className="text-slate-400 text-sm mt-0.5">{player.firstname} {player.lastname}</p>
-            )}
-            <div className="flex flex-wrap gap-2 mt-3 text-xs">
-              {player.nationality && (
-                <span className="px-2 py-0.5 rounded-full bg-[#00d4aa]/10 text-[#00d4aa]">{player.nationality}</span>
-              )}
-              {player.injured && (
-                <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Injured</span>
-              )}
-              {!player.injured && (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Fit</span>
+      <section className="overflow-hidden border border-border bg-panel rounded-card">
+        <div className="grid md:grid-cols-[220px_1fr]">
+          <div className="flex min-h-52 items-center justify-center border-b border-border bg-panel-2 p-7 md:border-b-0 md:border-r">
+            <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-card border border-border bg-bg">
+              {player.photo ? (
+                <img src={player.photo} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="font-display text-4xl text-muted">
+                  {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                </span>
               )}
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
-          <Field label="Age" value={player.age} />
-          <Field label="Nationality" value={player.nationality} />
-          <Field label="Height" value={player.height} />
-          <Field label="Weight" value={player.weight} />
-        </div>
-
-        {player.team && (
-          <div className="mt-5 pt-5 border-t border-white/5">
-            <div className="text-slate-500 text-xs uppercase tracking-wide mb-2">Current Team</div>
-            <Link href={`/teams?team=${player.team.id}`} className="flex items-center gap-3 hover:bg-white/5 rounded-lg p-3 -m-3 transition">
-              {player.team.logo ? (
-                <img src={player.team.logo} alt="" className="w-10 h-10 object-contain" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-xs text-slate-300 font-bold">
-                  {player.team.code ?? '?'}
-                </div>
-              )}
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
               <div>
-                <p className="text-white font-bold">{player.team.name}</p>
-                <p className="text-slate-500 text-xs">{player.team.country ?? '—'} {player.team.venueName ? `· ${player.team.venueName}` : ''}</p>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-lime">
+                  Player profile
+                </p>
+                <h1 className="mt-2 font-display text-[clamp(42px,6vw,72px)] uppercase leading-[0.92] tracking-[0.5px] text-ink">
+                  {player.name}
+                </h1>
+                {player.firstname && player.lastname && (
+                  <p className="mt-2 text-sm text-muted">{player.firstname} {player.lastname}</p>
+                )}
               </div>
+              <span className={`w-fit rounded px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.08em] ${
+                player.injured ? 'bg-loss/10 text-loss' : 'bg-win/10 text-win'
+              }`}>
+                {player.injured ? 'Injured' : 'Available'}
+              </span>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-y-5 sm:grid-cols-4">
+              <Field label="Age" value={player.age} />
+              <Field label="Nationality" value={player.nationality} />
+              <Field label="Height" value={player.height} />
+              <Field label="Weight" value={player.weight} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {player.team && (
+        <section className="border border-border bg-panel p-5 rounded-card">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-muted">Current club</p>
+              <h2 className="mt-1 text-base font-extrabold text-ink">Team assignment</h2>
+            </div>
+            <Link href={`/teams/${player.team.id}`} className="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-muted hover:text-lime">
+              View club
             </Link>
           </div>
-        )}
+          <Link
+            href={`/teams/${player.team.id}`}
+            className="flex items-center gap-4 border-t border-border pt-4 transition-colors hover:text-lime"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-chip border border-border bg-bg">
+              {player.team.logo ? (
+                <img src={player.team.logo} alt="" className="h-9 w-9 object-contain" />
+              ) : (
+                <span className="font-display text-sm text-muted">{player.team.code ?? '?'}</span>
+              )}
+            </div>
+            <div>
+              <p className="font-bold text-ink">{player.team.name}</p>
+              <p className="mt-1 text-xs text-muted">
+                {player.team.country ?? 'Unknown country'}
+                {player.team.venueName ? ` / ${player.team.venueName}` : ''}
+              </p>
+            </div>
+          </Link>
+        </section>
+      )}
 
-        <p className="text-slate-600 text-xs mt-6">
-          Match-level statistics (goals, assists, minutes) require <code className="text-slate-500">PlayerMatchStats</code> sync — not included in the free-tier sync flow.
-        </p>
-      </div>
+      <p className="font-mono text-[10px] leading-relaxed text-muted-2">
+        Match-level player statistics require the PlayerMatchStats sync and are not part of the free-tier flow.
+      </p>
     </div>
   );
 }
