@@ -7,7 +7,7 @@ tunnel: REPLACE_WITH_TUNNEL_UUID
 credentials-file: /home/REPLACE_WITH_VM_USER/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
 
 ingress:
-  - hostname: sportlytics.stei.cloud
+  - hostname: the-gaffer.stei.cloud
     service: http://localhost:3000
     originRequest:
       noTLSVerify: true

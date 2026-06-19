@@ -1,13 +1,12 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { getJwtSecret, hasConfiguredJwtSecret } from '@/lib/jwt-secret';
 
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET must be set in production');
+if (process.env.NODE_ENV === 'production' && !hasConfiguredJwtSecret()) {
+  throw new Error('JWT_SECRET or JWT_SECRET_BASE64 must be set in production');
 }
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'sportlytics-dev-secret-only'
-);
+const secret = getJwtSecret();
 
 export interface JWTPayload {
   userId: number;

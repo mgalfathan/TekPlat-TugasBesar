@@ -1,4 +1,4 @@
-# Sportlytics
+# THE GAFFER
 
 A real football analytics and prediction platform built with Next.js 14, TypeScript, Prisma, and Recharts.
 
@@ -44,7 +44,7 @@ cp .env.example .env
 Edit `.env`:
 
 ```
-DATABASE_URL="postgresql://user:password@localhost:5432/sportlytics"
+DATABASE_URL="postgresql://user:password@localhost:5432/the_gaffer"
 FOOTBALL_DATA_API_KEY="your_api_key_here"   # Optional — app works without it
 ```
 

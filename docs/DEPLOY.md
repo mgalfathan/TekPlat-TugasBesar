@@ -4,7 +4,7 @@
 
 ---
 
-This guide walks you through deploying Sportlytics to **Cloudflare Pages** with the **Postgres database hosted on your own VM** (DigitalOcean, Hetzner, Linode, etc.).
+This guide walks you through deploying THE GAFFER to **Cloudflare Pages** with the **Postgres database hosted on your own VM** (DigitalOcean, Hetzner, Linode, etc.).
 
 Cost estimate: $5–10/month for a small VM + free Cloudflare Pages tier.
 
@@ -26,9 +26,9 @@ sudo systemctl enable --now postgresql
 
 ```bash
 sudo -u postgres psql <<EOF
-CREATE USER sportlytics WITH PASSWORD 'CHANGE_THIS_STRONG_PASSWORD';
-CREATE DATABASE sportlytics OWNER sportlytics;
-GRANT ALL PRIVILEGES ON DATABASE sportlytics TO sportlytics;
+CREATE USER the_gaffer WITH PASSWORD 'CHANGE_THIS_STRONG_PASSWORD';
+CREATE DATABASE the_gaffer OWNER the_gaffer;
+GRANT ALL PRIVILEGES ON DATABASE the_gaffer TO the_gaffer;
 EOF
 ```
 
@@ -41,7 +41,7 @@ listen_addresses = '*'
 
 Edit `/etc/postgresql/14/main/pg_hba.conf` — add at the bottom:
 ```
-host    sportlytics    sportlytics    0.0.0.0/0    scram-sha-256
+host    the_gaffer    the_gaffer    0.0.0.0/0    scram-sha-256
 ```
 
 Restart and open the firewall:
@@ -57,14 +57,14 @@ sudo ufw enable
 ### Confirm from your local machine
 
 ```bash
-psql "postgresql://sportlytics:YOUR_PASSWORD@YOUR_VM_IP:5432/sportlytics"
+psql "postgresql://the_gaffer:YOUR_PASSWORD@YOUR_VM_IP:5432/the_gaffer"
 ```
 
 ---
 
 ## 2. Migrate the schema from SQLite → Postgres
 
-Sportlytics ships with SQLite migrations. They need to be regenerated for Postgres.
+THE GAFFER ships with SQLite migrations. They need to be regenerated for Postgres.
 
 **On your local machine**, in the project root:
 
@@ -80,7 +80,7 @@ rm -rf prisma/migrations
 rm -f prisma/dev.db
 
 # 3. Point DATABASE_URL at your VM (temporarily, just for migration)
-export DATABASE_URL="postgresql://sportlytics:PWD@VM_IP:5432/sportlytics"
+export DATABASE_URL="postgresql://the_gaffer:PWD@VM_IP:5432/the_gaffer"
 
 # 4. Generate the first Postgres migration
 npx prisma migrate dev --name init
@@ -167,7 +167,7 @@ Edit `package.json`:
 
 Add `wrangler.toml` in the repo root:
 ```toml
-name = "sportlytics"
+name = "the-gaffer"
 compatibility_date = "2024-09-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
@@ -200,10 +200,10 @@ Push your repo. Then on Cloudflare dashboard:
 Once the site is up:
 
 1. Visit `https://yourdomain.pages.dev/admin/login`
-2. Log in as `admin@sportlytics.local` / `admin12345` — **immediately change this password** via DB:
+2. Log in as `admin@the-gaffer.local` / `admin12345` — **immediately change this password** via DB:
    ```sql
    -- generate hash locally: node -e "console.log(require('bcryptjs').hashSync('NEW_PWD', 10))"
-   UPDATE "User" SET password = '$2a$10$...' WHERE email = 'admin@sportlytics.local';
+   UPDATE "User" SET password = '$2a$10$...' WHERE email = 'admin@the-gaffer.local';
    ```
 3. Go to **/admin/sync** → click **Sync Top 5** → wait ~30s → top European leagues are loaded
 4. Public pages (`/standings`, `/fixtures`, `/teams`, `/metrics`, etc.) are now reachable to any visitor
@@ -249,7 +249,7 @@ This avoids the rate limit by only running once/day (25 reqs).
 
 ## Alternatives if Cloudflare gets painful
 
-Prisma + Workers is still maturing. If you hit a wall, these "just work" with Sportlytics as-is:
+Prisma + Workers is still maturing. If you hit a wall, these "just work" with THE GAFFER as-is:
 - **Railway.app** — push repo, set env vars, done. Free hobby tier.
 - **Render.com** — same flow. Free tier (sleeps after 15min idle).
 - **Fly.io** — Postgres + app on the same edge. Free tier for small apps.

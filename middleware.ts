@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? 'sportlytics-dev-secret-only');
+const secret = getJwtSecret();
 
 async function verifyToken(token: string) {
   try {
